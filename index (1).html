@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전국 핫플레이스 답사 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Black+Han+Sans&family=IBM+Plex+Sans+KR:wght@300;400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#ECEAE0;
+    --paper-2:#F4F2EA;
+    --ink:#191B24;
+    --ink-soft:#4A4C57;
+    --cobalt:#2B44CF;
+    --coral:#FF4B57;
+    --mustard:#C67C1E;
+    --teal:#1B8A6B;
+    --line:rgba(25,27,36,.16);
+    --line-strong:rgba(25,27,36,.42);
+  }
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"IBM Plex Sans KR",system-ui,sans-serif;
+    font-weight:400;
+    line-height:1.6;
+    background-image:radial-gradient(var(--line) .8px,transparent .8px);
+    background-size:22px 22px;
+  }
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px;}
+  .mono{font-family:"IBM Plex Mono",monospace;}
+  .eyebrow{
+    font-family:"IBM Plex Mono",monospace;
+    font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--cobalt);font-weight:600;
+  }
+
+  /* ---------- HERO ---------- */
+  header.hero{
+    border-bottom:2px solid var(--ink);
+    padding:52px 0 34px;
+    position:relative;overflow:hidden;
+  }
+  .hero .tagrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:18px;}
+  .stamp{
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.7rem;letter-spacing:.14em;
+    border:1.5px solid var(--coral);color:var(--coral);
+    padding:5px 10px;border-radius:3px;transform:rotate(-3deg);
+    text-transform:uppercase;
+  }
+  h1.title{
+    font-family:"Black Han Sans",sans-serif;font-weight:400;
+    font-size:clamp(2.7rem,8vw,5.4rem);line-height:.94;
+    letter-spacing:-.01em;margin:0;
+  }
+  h1.title .hl{color:var(--cobalt);}
+  .lede{
+    margin:20px 0 0;max-width:56ch;font-size:1.02rem;color:var(--ink-soft);
+  }
+  .hero .coords{
+    position:absolute;top:18px;right:20px;font-size:.68rem;color:var(--line-strong);
+    text-align:right;line-height:1.9;letter-spacing:.06em;
+  }
+  @media(max-width:640px){.hero .coords{display:none;}}
+
+  /* ---------- CONCEPT ---------- */
+  section{padding:44px 0;border-bottom:1px solid var(--line);}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:26px;flex-wrap:wrap;}
+  .sec-head h2{
+    font-family:"Black Han Sans",sans-serif;font-weight:400;
+    font-size:clamp(1.5rem,3.6vw,2.1rem);margin:0;letter-spacing:-.01em;
+  }
+  .def{
+    font-size:1.12rem;line-height:1.72;max-width:64ch;margin:0 0 30px;
+    padding-left:18px;border-left:3px solid var(--mustard);
+  }
+  .def b{font-weight:600;color:var(--cobalt);box-shadow:inset 0 -.5em 0 rgba(43,68,207,.1);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}
+  .chip{
+    font-size:.86rem;font-weight:500;background:var(--paper-2);
+    border:1px solid var(--line);border-radius:100px;padding:6px 14px;
+  }
+
+  /* type legend */
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:26px;}
+  .legend span{font-size:.82rem;font-weight:500;display:flex;align-items:center;gap:7px;}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .legend .l-area{background:var(--cobalt);}
+  .legend .l-brand{background:var(--coral);}
+  .legend .l-renew{background:var(--mustard);}
+  .legend .l-nature{background:var(--teal);}
+
+  /* lifecycle timeline */
+  .cycle{display:grid;grid-template-columns:repeat(4,1fr);gap:0;margin-top:34px;}
+  .phase{
+    padding:20px 18px 22px;border-left:1px solid var(--line);position:relative;
+  }
+  .phase:first-child{border-left:2px solid var(--ink);}
+  .phase .num{
+    font-family:"Black Han Sans",sans-serif;font-size:2.1rem;line-height:1;
+    color:var(--cobalt);
+  }
+  .phase:nth-child(3) .num,.phase:nth-child(4) .num{color:var(--coral);}
+  .phase h4{margin:8px 0 6px;font-size:1.02rem;font-weight:700;}
+  .phase p{margin:0;font-size:.86rem;color:var(--ink-soft);line-height:1.55;}
+  @media(max-width:720px){.cycle{grid-template-columns:1fr 1fr;}
+    .phase:nth-child(3){border-left:2px solid var(--ink);}}
+  @media(max-width:430px){.cycle{grid-template-columns:1fr;}
+    .phase{border-left:2px solid var(--ink);}}
+
+  /* ---------- FILTER ---------- */
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:26px;}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;}
+  .filters button{
+    font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:500;
+    background:transparent;border:1.5px solid var(--line-strong);color:var(--ink);
+    padding:7px 14px;border-radius:4px;cursor:pointer;transition:.15s;
+  }
+  .filters button:hover{border-color:var(--ink);}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .count{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-soft);}
+
+  /* ---------- CARDS ---------- */
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+  .card{
+    text-align:left;background:var(--paper-2);border:1.5px solid var(--ink);
+    border-radius:6px;padding:0;cursor:pointer;overflow:hidden;
+    font-family:inherit;color:inherit;transition:transform .14s,box-shadow .14s;
+    display:flex;flex-direction:column;position:relative;
+    box-shadow:3px 3px 0 rgba(25,27,36,.14);
+  }
+  .card:hover,.card:focus-visible{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--cobalt);outline:none;}
+  .card .top{padding:14px 16px 12px;border-bottom:1px dashed var(--line-strong);}
+  .card .code{
+    font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;
+    letter-spacing:.12em;color:var(--coral);display:flex;justify-content:space-between;
+  }
+  .card h3{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:1.42rem;margin:6px 0 0;letter-spacing:-.01em;}
+  .card .loc{font-size:.82rem;color:var(--ink-soft);margin-top:3px;}
+  .type-badge{
+    font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:600;letter-spacing:.08em;
+    padding:3px 9px;border-radius:100px;border:1.5px solid;display:inline-block;margin-top:9px;
+  }
+  .type-badge.area{color:var(--cobalt);border-color:var(--cobalt);}
+  .type-badge.brand{color:var(--coral);border-color:var(--coral);}
+  .type-badge.renew{color:var(--mustard);border-color:var(--mustard);}
+  .type-badge.nature{color:var(--teal);border-color:var(--teal);}
+  .card .body{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1;}
+  .card .feat{font-size:.88rem;line-height:1.5;}
+  .card .more{
+    margin-top:auto;font-family:"IBM Plex Mono",monospace;font-size:.72rem;
+    font-weight:600;color:var(--cobalt);display:flex;align-items:center;gap:6px;
+  }
+  .card .more::after{content:"→";transition:transform .14s;}
+  .card:hover .more::after{transform:translateX(4px);}
+
+  /* ---------- MODAL ---------- */
+  .overlay{
+    position:fixed;inset:0;background:rgba(25,27,36,.55);display:none;
+    align-items:flex-start;justify-content:center;padding:30px 16px;z-index:50;
+    overflow-y:auto;
+  }
+  .overlay.open{display:flex;}
+  .sheet{
+    background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;
+    max-width:640px;width:100%;box-shadow:10px 10px 0 rgba(43,68,207,.35);
+    animation:pop .18s ease;
+  }
+  @keyframes pop{from{transform:translateY(14px);opacity:0;}to{transform:none;opacity:1;}}
+  .sheet .sheet-top{
+    padding:22px 26px 18px;border-bottom:2px solid var(--ink);position:relative;
+  }
+  .sheet .code{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.12em;color:var(--coral);}
+  .sheet h3{font-family:"Black Han Sans",sans-serif;font-weight:400;font-size:2rem;margin:8px 0 0;}
+  .sheet .loc{font-size:.9rem;color:var(--ink-soft);margin-top:6px;font-family:"IBM Plex Mono",monospace;}
+  .close{
+    position:absolute;top:16px;right:18px;width:34px;height:34px;border-radius:50%;
+    border:1.5px solid var(--ink);background:transparent;font-size:1.1rem;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;line-height:1;
+  }
+  .close:hover{background:var(--ink);color:var(--paper);}
+  .sheet .sheet-body{padding:22px 26px 28px;}
+  .block{margin-bottom:22px;}
+  .block:last-child{margin-bottom:0;}
+  .block .lab{
+    font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.16em;
+    text-transform:uppercase;font-weight:600;margin-bottom:8px;display:inline-block;
+    padding:2px 0;
+  }
+  .lab.c-feat{color:var(--cobalt);border-bottom:2px solid var(--cobalt);}
+  .lab.c-cycle{color:var(--ink);border-bottom:2px solid var(--ink);}
+  .lab.c-issue{color:var(--coral);border-bottom:2px solid var(--coral);}
+  .lab.c-res{color:var(--mustard);border-bottom:2px solid var(--mustard);}
+  .block p{margin:0;font-size:.96rem;line-height:1.62;}
+  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{
+    counter-increment:s;position:relative;padding:6px 0 6px 34px;font-size:.93rem;line-height:1.5;
+    border-bottom:1px dotted var(--line);
+  }
+  ol.steps li:last-child{border-bottom:none;}
+  ol.steps li::before{
+    content:counter(s,decimal-leading-zero);position:absolute;left:0;top:6px;
+    font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.8rem;color:var(--cobalt);
+  }
+  ul.bul{margin:0;padding:0;list-style:none;}
+  ul.bul li{position:relative;padding:5px 0 5px 20px;font-size:.93rem;line-height:1.5;}
+  ul.bul li::before{content:"—";position:absolute;left:0;color:var(--coral);font-weight:600;}
+  .hint{
+    background:rgba(198,124,30,.13);border:1px solid var(--mustard);border-radius:6px;
+    padding:14px 16px;font-size:.92rem;line-height:1.55;
+  }
+  .hint b{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;color:var(--mustard);
+    display:block;margin-bottom:5px;text-transform:uppercase;}
+
+  footer{padding:34px 0 60px;font-size:.82rem;color:var(--ink-soft);}
+  footer .mono{color:var(--line-strong);}
+
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="coords mono">N 33°–38°<br>E 126°–129°<br>KR · 31 SITES</div>
+    <div class="tagrow">
+      <span class="eyebrow">한국지리 탐구 · 답사 노트</span>
+      <span class="stamp">Field Guide</span>
+    </div>
+    <h1 class="title">전국 <span class="hl">핫플레이스</span><br>답사 지도</h1>
+    <p class="lede">골목과 낡은 공장이 어떻게 '뜨는 동네'가 되고, 또 어떤 고민을 안게 될까? 카드를 눌러 31곳의 위치·특징·생성 과정·정체성 이슈·활용 자원을 살펴보고, 우리 지역 탐구의 밑그림을 그려 보자.</p>
+  </div>
+</header>
+
+<section id="concept">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">01 / 개념</span>
+      <h2>핫플레이스란?</h2>
+    </div>
+    <p class="def">핫플레이스는 <b>SNS와 입소문을 타고 짧은 기간에 사람들이 몰리는 인기 장소</b>다. 대개 노후하거나 임대료가 저렴했던 골목·산업 공간이 청년과 예술가의 손을 거쳐 <b>개성 있는 소비·문화 공간</b>으로 재탄생하며 만들어지고, 때로는 <b>하나의 노포·공장·해변</b>이 도시 전체를 대표하는 핫플레이스가 되기도 한다.</p>
+
+    <div class="chips" aria-label="핫플레이스의 공통 특징">
+      <span class="chip">SNS·미디어 확산</span>
+      <span class="chip">골목·노후 공간의 재해석</span>
+      <span class="chip">개성 있는 소규모 상점</span>
+      <span class="chip">청년·예술가 유입</span>
+      <span class="chip">지역 상징 노포·브랜드</span>
+      <span class="chip">사진 찍기 좋은 경관</span>
+      <span class="chip">빠른 유행 주기</span>
+    </div>
+
+    <div class="legend" aria-label="핫플레이스 유형">
+      <span><i class="l-area"></i>골목·지구형</span>
+      <span><i class="l-brand"></i>브랜드·노포형</span>
+      <span><i class="l-renew"></i>재생 공간형</span>
+      <span><i class="l-nature"></i>자연·관광형</span>
+    </div>
+
+    <div class="cycle" aria-label="핫플레이스의 생애 주기">
+      <div class="phase"><div class="num">01</div><h4>태동</h4><p>저렴한 임대료의 노후·산업 공간에 예술가·청년·소상공인이 모여 개성 있는 문화가 싹튼다.</p></div>
+      <div class="phase"><div class="num">02</div><h4>확산</h4><p>SNS와 미디어를 타고 방문객이 몰리며 '핫플'로 널리 알려진다.</p></div>
+      <div class="phase"><div class="num">03</div><h4>상업화</h4><p>대형 자본·프랜차이즈·팝업이 진입하고 임대료가 급등한다.</p></div>
+      <div class="phase"><div class="num">04</div><h4>쇠퇴·재생</h4><p>초기 상인·원주민이 밀려나고(젠트리피케이션) 개성이 옅어지며, 일부는 재생을 모색한다.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="explore">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow">02 / 답사</span>
+      <h2>전국 핫플레이스 31</h2>
+    </div>
+    <div class="toolbar">
+      <div class="filters" id="filters" role="group" aria-label="지역 필터">
+        <button data-region="all" aria-pressed="true">전체</button>
+        <button data-region="서울" aria-pressed="false">서울</button>
+        <button data-region="부산" aria-pressed="false">부산</button>
+        <button data-region="대구" aria-pressed="false">대구</button>
+        <button data-region="대전" aria-pressed="false">대전</button>
+        <button data-region="광주" aria-pressed="false">광주</button>
+        <button data-region="경남" aria-pressed="false">경남</button>
+        <button data-region="경북" aria-pressed="false">경북</button>
+        <button data-region="전북" aria-pressed="false">전북</button>
+        <button data-region="전남" aria-pressed="false">전남</button>
+        <button data-region="강원" aria-pressed="false">강원</button>
+        <button data-region="제주" aria-pressed="false">제주</button>
+      </div>
+      <span class="count mono" id="count"></span>
+    </div>
+    <div class="grid" id="grid"></div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    성취기준 <span class="mono">[12한탐02-02]</span> · 핫플레이스의 특징·생성 과정·정체성 이슈 탐구 및 지역 자원 활용 관광 활성화 제안 · 사례 정보는 학습용 요약이며 현황은 변할 수 있음.
+  </div>
+</footer>
+
+<div class="overlay" id="overlay" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+  <div class="sheet" id="sheet"></div>
+</div>
+
+<script>
+const PLACES = [
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"성수동", loc:"서울 성동구 성수동 · 성수역/서울숲",
+   feat:"수제화 공장과 붉은벽돌 창고를 개조한 카페·편집숍·팝업스토어가 밀집한 서울 대표 트렌드 발신지.",
+   cycle:["1970년대 수제화 공장·붉은벽돌 창고가 모인 준공업지역","2010년대 저렴한 임대료에 예술가·개성 있는 카페 유입","SNS·미디어 확산으로 방문객 급증","대기업 팝업·플래그십·패션기업(무신사 등) 진입"],
+   issue:["임대료 급등으로 초기 상인·원주민이 밀려남(젠트리피케이션)","패션·뷰티 위주 업종 단일화와 팝업 획일화","기존 수제화 제조 기반의 쇠퇴"],
+   res:"붉은벽돌 수제화 산업유산, 서울숲, 준공업 창고 건축 경관",
+   hint:"성수동의 '붉은벽돌'과 수제화 기술을 관광 자원으로 되살릴 방법은?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"익선동", loc:"서울 종로구 익선동 · 종로3가역/창덕궁",
+   feat:"서울에서 가장 오래된 도시한옥 밀집지. 좁은 골목의 한옥을 개조한 카페·소품숍이 특징.",
+   cycle:["1920년대 도시형(개량) 한옥 밀집지로 조성","재개발 무산과 노후화로 쇠퇴","2010년대 한옥을 개조한 카페·소품숍 유입","SNS 확산으로 도심 대표 관광지화"],
+   issue:["임대료 상승과 원주민 이탈","관광객 급증으로 주거·상업 갈등","한옥 경관 훼손 우려"],
+   res:"도시한옥 군, 인접한 창덕궁·종묘·인사동 역사문화벨트",
+   hint:"한옥 경관을 지키면서 상권도 유지하려면 어떤 규칙이 필요할까?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"을지로", loc:"서울 중구 을지로3~4가 · 세운상가",
+   feat:"인쇄·공구 노포 사이에 숨은 감성 술집·카페가 공존하는 '힙지로'.",
+   cycle:["도심 인쇄·공구 제조 상권으로 형성","제조업 쇠퇴와 저렴한 임대료","노포 사이에 청년 창업 술집·카페 유입","SNS 확산으로 신·구 상권 공존형 명소화"],
+   issue:["세운재정비 등 재개발로 공구상 철거·이주","젠트리피케이션과 임대료 상승","도심 제조·인쇄 생태계 소멸 우려"],
+   res:"도심 제조·인쇄 산업생태계, 노포, 세운상가",
+   hint:"노포와 신상권이 함께 살아남는 상생 모델을 만들 수 있을까?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"홍대", loc:"서울 마포구 서교·동교동 · 홍대입구역",
+   feat:"미술대학을 기반으로 자란 인디음악·클럽·거리공연의 중심지.",
+   cycle:["홍익대 미술대학 기반 화방·작업실 밀집","인디밴드·클럽·거리공연 문화 형성","상업화와 방문객 급증","임대료 상승으로 예술·인디문화가 인근으로 확산"],
+   issue:["대표적 젠트리피케이션(예술가·인디문화가 상수·연남·문래로 이탈)","프랜차이즈화로 개성 약화","관광·상업 소음 갈등"],
+   res:"예술대학, 인디음악 인프라, 걷고 싶은 거리·거리공연 문화",
+   hint:"'뜨면 밀려나는' 예술가를 붙잡을 지원책은 무엇일까?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"연남동", loc:"서울 마포구 연남동 · 경의선숲길(연트럴파크)",
+   feat:"경의선숲길을 따라 주택을 개조한 카페·식당이 늘어선 산책·데이트 명소.",
+   cycle:["홍대 상권 확장의 배후 주택가","경의선숲길(연트럴파크) 조성으로 유동인구 증가","주택을 개조한 카페·식당으로 상권화","SNS 확산으로 산책·데이트 명소화"],
+   issue:["주거지 상업화로 주민 생활 침해","임대료 상승","주차·소음·쓰레기 문제"],
+   res:"경의선숲길 선형공원, 연남동 화교(중국) 문화",
+   hint:"공원과 주거가 공존하는 관광 관리 방안은?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"이태원 경리단길", loc:"서울 용산구 이태원동 · 녹사평역",
+   feat:"개성 있는 가게로 급부상했다가 임대료 상승으로 빠르게 쇠퇴한 '○리단길'의 원조이자 젠트리피케이션의 상징.",
+   cycle:["이태원 인근 한적한 언덕길에 개성 있는 맛집·바 유입","방송·SNS로 '경리단길' 열풍, 방문객 급증","임대료 급등과 대형 프랜차이즈 진입","초기 가게 이탈·공실 증가로 상권 침체"],
+   issue:["급격한 임대료 상승으로 원조 상인 이탈(젠트리피케이션)","'○리단길' 확산의 원조이자 쇠퇴의 상징","공실 증가와 상권 활력 저하"],
+   res:"이태원의 다국적 문화, 남산·해방촌 연계 경관",
+   hint:"한 번 식은 상권을 다시 살리려면 무엇이 필요할까?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"삼청동", loc:"서울 종로구 삼청동 · 경복궁/북촌",
+   feat:"갤러리·한옥 카페로 사랑받았지만 국내에서 가장 먼저 젠트리피케이션을 겪은 골목.",
+   cycle:["경복궁·북촌 옆 조용한 갤러리·공방 거리","한옥·골목 감성으로 카페·상점 유입, 관광지화","임대료 상승과 대형 브랜드·화장품 로드숍 진입","임대료 부담·관광 변화로 공실과 침체 반복"],
+   issue:["이른 시기의 젠트리피케이션으로 개성 있는 가게 이탈","프랜차이즈화와 획일화","관광 경기에 민감한 상권 불안정"],
+   res:"경복궁·북촌 한옥, 갤러리·미술관 밀집, 청와대 개방 이후 관광 동선",
+   hint:"문화·예술 정체성을 지키는 임대 안정 방안은?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"신사동 가로수길", loc:"서울 강남구 신사동 · 신사역/압구정",
+   feat:"패션·디자인 편집숍의 거리로 떴다가 대형 플래그십에 자리를 내준 젠트리피케이션 사례.",
+   cycle:["가로수 늘어선 한적한 거리에 디자이너 숍·갤러리 유입","패션·감성 상권으로 유명세","임대료 급등, 대형 브랜드 플래그십·화장품 매장 진입","개성 있는 소규모 숍이 이면도로('세로수길')로 밀려남"],
+   issue:["임대료 상승으로 소규모 점포 이탈(젠트리피케이션)","대형 브랜드 위주 획일화","이면 상권으로의 풍선효과"],
+   res:"가로수 경관, 압구정·강남 패션 상권 연계",
+   hint:"대형 브랜드와 작은 가게가 공존할 방법은?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"문래동 창작촌", loc:"서울 영등포구 문래동 · 문래역",
+   feat:"철공소 골목에 예술가 작업실과 카페가 스며들어 공존하는 산업유산 재생 골목.",
+   cycle:["1960년대 이후 철공소·소규모 제조업 밀집지","2000년대 저렴한 임대료에 예술가 작업실 유입","철공소와 예술·카페가 뒤섞인 독특한 경관 형성","SNS 확산으로 방문객 증가·상업화"],
+   issue:["상업화로 임대료 상승, 예술가·철공소 이탈 우려","제조업 생태계와 관광의 충돌(소음·안전)","젠트리피케이션 조짐"],
+   res:"철공 제조 산업유산, 예술가 창작촌, 낮과 밤이 다른 골목 경관",
+   hint:"철공소와 예술가가 함께 남는 방법을 설계한다면?"},
+
+  {code:"SEL", region:"서울", type:"골목·지구형", name:"신당동", loc:"서울 중구 신당동 · 신당역/약수역",
+   feat:"떡볶이 골목의 오래된 상권이 독립서점·바 등으로 재해석된 '힙당동'.",
+   cycle:["떡볶이 타운으로 알려진 오래된 상권","중앙시장 등 노포 사이 저렴한 공간에 청년 창업 유입","독립서점·칵테일바·편집숍 등 개성 있는 가게 형성","SNS 확산으로 '힙당동' 명소화"],
+   issue:["노포와 신상권의 공존·갈등","임대료 상승 조짐과 젠트리피케이션 우려","빠른 유행 주기"],
+   res:"신당동 떡볶이·중앙시장 노포, 도심 접근성",
+   hint:"떡볶이 골목의 원래 정체성을 어떻게 살릴까?"},
+
+  {code:"BSN", region:"부산", type:"골목·지구형", name:"감천문화마을", loc:"부산 사하구 감천동 · 산복도로",
+   feat:"산비탈 계단식 마을을 파스텔 도색·공공미술로 되살린 '한국의 마추픽추'.",
+   cycle:["한국전쟁 피란민·태극도 신자 정착촌으로 형성","산비탈 계단식 마을, 낙후·인구 감소","2009년 공공미술 마을재생 프로젝트","파스텔 경관·벽화로 관광지화"],
+   issue:["오버투어리즘(주민 사생활 침해·소음)","주거지의 과도한 관광지화","원주민 고령화·이탈"],
+   res:"피란 역사, 산복도로 경관, 공공미술·골목",
+   hint:"주민 생활을 지키는 '착한 관광' 규칙을 만든다면?"},
+
+  {code:"BSN", region:"부산", type:"골목·지구형", name:"전포 카페거리", loc:"부산 부산진구 전포동 · 서면역",
+   feat:"공구상가 사이로 개성 있는 카페가 파고든 '전리단길'.",
+   cycle:["전포공구상가 등 공구·제조 상권","상권 쇠퇴와 저렴한 임대료","개성 있는 카페 유입('전리단길')","CNN 등 소개로 확산·명소화"],
+   issue:["젠트리피케이션과 임대료 상승","'○리단길'식 획일화","기존 공구상 위축"],
+   res:"서면 도심 접근성, 공구 산업유산",
+   hint:"공구상가의 '기술과 손재주'를 콘텐츠로 만들 수 있을까?"},
+
+  {code:"BSN", region:"부산", type:"골목·지구형", name:"영도 흰여울문화마을", loc:"부산 영도구 영선동 · 절영해안산책로",
+   feat:"절벽 위 피란민 마을이 영화 촬영지와 해안 카페벨트로 되살아난 곳.",
+   cycle:["한국전쟁 피란민이 절벽 위에 정착한 마을","낙후·인구 감소로 쇠퇴","영화 촬영지·벽화로 알려지며 방문객 증가","해안 조망 카페가 늘며 관광 명소화"],
+   issue:["오버투어리즘(좁은 골목·주민 사생활 침해)","주거지의 관광지화","원주민 고령화"],
+   res:"절영해안 절벽 경관, 피란 역사, 영도 카페벨트·조선산업 배후",
+   hint:"감천문화마을과 무엇이 같고 다른지 비교해 본다면?"},
+
+  {code:"BSN", region:"부산", type:"재생 공간형", name:"F1963", loc:"부산 수영구 망미동 · 망미역",
+   feat:"45년 된 고려제강 와이어 공장을 도서관·카페·공연장으로 바꾼 산업유산 재생 복합문화공간.",
+   cycle:["1963년부터 가동된 고려제강 와이어 생산 공장","공장 이전으로 대규모 산업 공간이 비게 됨","2016년 부산비엔날레 등을 계기로 복합문화공간 재생","서점·카페·전시·공연장으로 시민 문화공간이자 관광지화"],
+   issue:["산업유산 보존과 상업적 활용 사이의 균형","도심 외곽 접근성","재생 공간의 지속적 운영·콘텐츠 확보"],
+   res:"와이어 공장 산업유산, 대형 실내외 공간, 인접 F1963 대나무숲",
+   hint:"낡은 공장을 지역 문화 자원으로 오래 살리려면?"},
+
+  {code:"BSN", region:"부산", type:"브랜드·노포형", name:"모모스커피", loc:"부산 금정구 부곡동(온천장) · 영도 로스터리",
+   feat:"월드 바리스타 챔피언을 배출한 스페셜티 커피 로스터리. 부산을 '커피 도시'로 알린 목적지형 카페.",
+   cycle:["2007년 부산 온천장의 작은 테이크아웃 커피점으로 시작","직접 로스팅·품질로 마니아층 형성","2019·2023년 세계 바리스타 대회 우승으로 세계적 명성","영도 로스터리 등으로 확장, 부산 커피 관광의 중심"],
+   issue:["유명세에 따른 방문객 혼잡·대기","브랜드 확장과 초기 로컬 감성 사이의 균형","상권 변화·젠트리피케이션 우려"],
+   res:"부산 커피 산업 브랜드, 영도 재생·해안 경관, 원도심 커피벨트",
+   hint:"한 카페의 명성을 부산 전체의 커피 관광으로 잇는 방법은?"},
+
+  {code:"DGU", region:"대구", type:"골목·지구형", name:"김광석다시그리기길", loc:"대구 중구 대봉동 · 방천시장",
+   feat:"쇠락한 방천시장 골목을 가수 김광석 이야기로 되살린 스토리텔링 재생 골목.",
+   cycle:["대구 방천시장 인근 침체된 골목","가수 김광석을 주제로 한 벽화·조형물 조성","스토리텔링 명소로 방문객 유입","공연·축제와 결합해 관광 골목화"],
+   issue:["특정 인물 콘텐츠 의존과 노후화","시장 상인과 관광의 상생","콘텐츠 재생산 부담"],
+   res:"김광석 인물 스토리, 방천시장, 대구 근대골목 연계",
+   hint:"인물 이야기 하나로 골목을 계속 살리려면 무엇이 더 필요할까?"},
+
+  {code:"DJN", region:"대전", type:"브랜드·노포형", name:"성심당", loc:"대전 중구 은행동 · 대전역/으능정이",
+   feat:"1956년 대전역 앞에서 시작해 대전에서만 파는 향토 빵집. 튀김소보로·부추빵으로 대전 여행의 필수 코스가 됨.",
+   cycle:["1956년 대전역 앞 노점 찐빵집으로 출발","튀김소보로 등 독자 메뉴로 지역 명물화","'대전에서만 판매' 원칙으로 지역 정체성 강화","전국적 입소문으로 오픈런·대전 대표 관광자원화"],
+   issue:["단일 매장 집중에 따른 오픈런·혼잡","대전역사 입점 수수료 등 임대 조건 갈등","지역 한정 원칙 유지 vs 확장 압력, 유사 브랜드 문제"],
+   res:"대전 로컬 브랜드 정체성, 대전역·으능정이 스카이로드 원도심",
+   hint:"'대전에서만'이라는 원칙을 지키면서 관광을 넓히려면?"},
+
+  {code:"DJN", region:"대전", type:"골목·지구형", name:"소제동", loc:"대전 동구 소제동 · 대전역 인근",
+   feat:"일제강점기 철도 관사촌을 개조한 카페거리. 근대 건축과 재개발이 부딪히는 현장.",
+   cycle:["일제강점기 대전역 철도 관사촌으로 조성","노후화로 쇠퇴한 근대 주택가","관사를 개조한 카페·전시공간 유입","SNS 확산으로 대전 대표 카페거리화"],
+   issue:["재개발과 근대건축 보존의 충돌","젠트리피케이션과 원주민 이탈","관광지화 속 지역성 유지 문제"],
+   res:"철도 관사 근대건축, 대전역·원도심 접근성",
+   hint:"재개발과 근대유산 보존 사이의 균형점은 어디일까?"},
+
+  {code:"GJU", region:"광주", type:"재생 공간형", name:"1913송정역시장", loc:"광주 광산구 · 광주송정역 앞",
+   feat:"100년 넘은 역전 시장을 옛 간판·스토리텔링으로 되살린 전통시장 재생 사례.",
+   cycle:["1913년 개설된 오래된 송정역 앞 시장","상권 침체로 쇠퇴","2016년 옛 정취를 살린 리모델링·스토리텔링 재생","KTX 송정역과 연계해 관광 시장화"],
+   issue:["관광 시장과 생활 시장의 균형","임대료 상승·젠트리피케이션 우려","방문객 편중 시간대"],
+   res:"역전 시장의 역사, KTX 송정역 접근성, 광주 근대 상권",
+   hint:"구경하는 시장과 장 보는 시장을 어떻게 함께 살릴까?"},
+
+  {code:"GJU", region:"광주", type:"골목·지구형", name:"양림동", loc:"광주 남구 양림동 · 사직공원 인근",
+   feat:"선교사 사택 등 근대 건축이 모인 '광주의 근대역사문화마을'.",
+   cycle:["근대기 선교사·교육·의료 시설이 자리 잡은 마을","근대 건축과 한옥이 남은 채 노후화","근대문화유산 정비·펭귄마을 등 재생","근대역사 탐방·카페와 결합해 관광지화"],
+   issue:["근대건축 보존과 상업화의 균형","주거지 관광지화","방문객 편중"],
+   res:"선교사 사택 등 근대건축, 펭귄마을, 광주 근대사 스토리",
+   hint:"근대건축을 살린 '이야기가 있는 관광'을 설계한다면?"},
+
+  {code:"GNM", region:"경남", type:"골목·지구형", name:"통영 동피랑마을", loc:"경남 통영시 동호동 · 강구안 항구",
+   feat:"철거 위기의 언덕 마을을 벽화로 되살려 한려수도를 내려다보는 명소로 존치.",
+   cycle:["강구안 항구 위 언덕의 낙후 마을, 철거 예정","2007년 벽화 공모전 '동피랑 살리기'","벽화·골목 경관으로 존치·관광지화","한려수도 조망 명소로 정착"],
+   issue:["오버투어리즘과 주민 사생활 침해","벽화 훼손·관리 부담","관광 수익의 주민 환원 문제"],
+   res:"강구안 항구·수산, 통영 예술(윤이상·박경리·나전칠기), 한려수도 경관",
+   hint:"통영의 예술·바다 자원을 마을 주민과 어떻게 연결할까?"},
+
+  {code:"GNM", region:"경남", type:"골목·지구형", name:"통영 봉숫골", loc:"경남 통영시 봉평동 · 전혁림미술관",
+   feat:"화가 전혁림의 미술관을 중심으로 벽화·공방·카페가 어우러진 예술 골목.",
+   cycle:["통영 출신 화가 전혁림의 미술관이 자리한 골목","벚꽃길·예술 자원으로 방문객 관심","공방·카페·벽화가 더해지며 예술 골목화","동피랑과 함께 통영 예술관광 코스화"],
+   issue:["예술 정체성과 상업화의 균형","방문객 편중·주거지 영향","콘텐츠 지속 관리"],
+   res:"전혁림미술관·통영 예술, 봉숫골 벚꽃길, 통영 바다·공예(나전칠기)",
+   hint:"통영의 예술가 자원을 마을 관광으로 잇는 방법은?"},
+
+  {code:"GNM", region:"경남", type:"골목·지구형", name:"김해 봉리단길", loc:"경남 김해시 봉황동 · 봉황역/한옥체험관",
+   feat:"오래된 주택가 골목에 청년 카페·상점이 들어선 김해의 '리단길'.",
+   cycle:["봉황동 오래된 주택가 골목","저렴한 임대료에 청년 카페·상점 유입","SNS로 '봉리단길' 알려짐","김해 원도심 대표 상권으로 성장"],
+   issue:["'○리단길' 획일화","임대료 상승·젠트리피케이션 우려","가야 유적 등 지역색과의 연계 부족"],
+   res:"가야 문화유산(봉황동 유적·수로왕릉), 김해 원도심, 한옥체험",
+   hint:"가야의 역사 자원을 봉리단길과 어떻게 엮을 수 있을까?"},
+
+  {code:"GBK", region:"경북", type:"골목·지구형", name:"경주 황리단길", loc:"경북 경주시 황남동 · 대릉원/첨성대",
+   feat:"신라 유적 대릉원 옆, 한옥·주택을 개조한 카페·상점이 고도 경관과 어우러진 거리.",
+   cycle:["대릉원 옆 저층 주거지","한옥·주택을 개조한 카페·상점 유입","고도(古都) 경관과 결합해 SNS 확산","경주 대표 상권으로 성장('황리단길')"],
+   issue:["젠트리피케이션과 임대료 상승","'○리단길' 획일화","세계유산·문화재 주변 경관 관리"],
+   res:"신라 왕경 유적(대릉원·첨성대), 한옥, 세계유산 도시 브랜드",
+   hint:"유적 경관과 상권을 조화시키는 디자인 기준을 세운다면?"},
+
+  {code:"JBK", region:"전북", type:"골목·지구형", name:"전주 한옥마을", loc:"전북 전주시 완산구 교·풍남동 · 경기전",
+   feat:"대규모 전통 한옥군에 한복 대여·먹거리가 어우러진 전국 대표 한옥 관광지.",
+   cycle:["일제강점기 형성된 한옥 밀집지","전통 보존·정비 정책","한복·먹거리 중심 관광지로 성장","전국 대표 한옥 관광지화"],
+   issue:["먹거리·프랜차이즈 위주 상업화·획일화","원주민 이탈과 실거주 감소","전통 경관·정체성 훼손"],
+   res:"한옥, 한식·한지·판소리 전통문화, 경기전·향교",
+   hint:"'먹거리 거리'를 넘어 전통문화 체험으로 확장하려면?"},
+
+  {code:"JBK", region:"전북", type:"재생 공간형", name:"전주 남부시장 청년몰", loc:"전북 전주시 완산구 · 남부시장 2층",
+   feat:"쇠퇴하던 전통시장 2층에 청년 상인이 들어와 되살린 시장 재생의 대표 사례.",
+   cycle:["오래된 남부시장의 침체된 2층 점포","청년 창업 지원으로 '청년몰' 조성","개성 있는 가게·먹거리로 젊은 방문객 유입","한옥마을 관광과 연계해 명소화"],
+   issue:["청년 상인의 임대료·수익 지속성","기존 시장 상인과의 상생","유행 이후 공실 관리"],
+   res:"전통시장 인프라, 인접 전주 한옥마을 관광 동선",
+   hint:"청년 상인이 오래 버틸 수 있는 지원책은?"},
+
+  {code:"JBK", region:"전북", type:"브랜드·노포형", name:"군산 이성당", loc:"전북 군산시 중앙로 · 근대문화거리",
+   feat:"1945년 문을 연 국내에서 가장 오래된 빵집. 단팥빵·야채빵으로 군산 근대 여행과 함께 찾는 명소.",
+   cycle:["1945년 군산에서 제과점으로 출발","단팥빵·야채빵 등 대표 메뉴로 향토 명물화","군산 근대문화 관광 부흥과 함께 재조명","'가장 오래된 빵집' 브랜드로 전국적 명소화"],
+   issue:["원조·유사 매장 논란과 상표 문제","노포의 계승·품질 유지 부담","특정 메뉴·매장 집중에 따른 혼잡"],
+   res:"군산 근대건축·항구 역사(시간여행마을), 오래된 빵집 스토리",
+   hint:"'가장 오래된 빵집' 이야기를 군산 근대 관광과 어떻게 엮을까?"},
+
+  {code:"JNM", region:"전남", type:"골목·지구형", name:"목포 근대역사문화거리", loc:"전남 목포시 만호동 · 목포근대역사관",
+   feat:"개항기 일본식 건물과 근대 거리가 남아 근대문화 관광지로 재조명된 원도심.",
+   cycle:["개항 이후 형성된 근대 상업·행정 거리","산업 쇠퇴로 원도심 침체","근대건축 보존·근대역사관 조성","드라마·근대문화 관광으로 재조명"],
+   issue:["근대건축(일제 잔재)의 보존·해석 논쟁","원도심 공동화","관광과 주민 생활의 조화"],
+   res:"개항기 근대건축, 목포항·유달산 경관, 근대역사관",
+   hint:"아픈 역사도 담긴 근대 유산을 어떻게 관광 자원으로 풀어낼까?"},
+
+  {code:"GWN", region:"강원", type:"자연·관광형", name:"강릉 안목 커피거리", loc:"강원 강릉시 견소동 · 안목해변",
+   feat:"동해 해변을 따라 로스터리 카페가 늘어선 '커피도시 강릉'의 상징.",
+   cycle:["동해 해변의 자판기 커피 명소","로스터리·바리스타 카페 유입","'커피도시 강릉' 브랜드·커피축제","해변 카페거리로 관광 명소화"],
+   issue:["성수기 혼잡·주차 문제","상업화·프랜차이즈 확산","해변 경관·환경 부담"],
+   res:"동해 해변 경관, 커피 산업 브랜드, 커피축제",
+   hint:"'커피도시' 브랜드를 사계절 관광으로 넓히려면?"},
+
+  {code:"GWN", region:"강원", type:"자연·관광형", name:"양양 서피비치", loc:"강원 양양군 현북면 · 하조대해변",
+   feat:"서핑 문화가 만든 신흥 해변 관광지. 자연 자원과 라이프스타일이 결합한 사례.",
+   cycle:["동해의 좋은 파도 조건에 서퍼들이 모임","서핑 강습·비치클럽 등 인프라 형성","이국적 해변 문화로 SNS 확산","양양이 '서핑 성지'로 브랜드화"],
+   issue:["성수기 혼잡·소음·환경 부담","계절·날씨에 민감한 관광 수요","지역 주민과 관광객의 문화 차이"],
+   res:"동해 파도·해변 경관, 서핑 라이프스타일, 하조대 등 자연자원",
+   hint:"'자연 자원 + 놀이문화'를 사계절 관광으로 넓히려면?"},
+
+  {code:"JEJ", region:"제주", type:"자연·관광형", name:"제주 애월 카페거리", loc:"제주 제주시 애월읍 · 한담해변",
+   feat:"해안도로를 따라 화산 해안 절경과 어우러진 카페가 이어지는 제주 대표 카페거리.",
+   cycle:["애월 해안도로 변 카페 입지","해안 절경과 결합한 카페 상권 형성","SNS·드라마 노출로 확산","제주 대표 카페거리로 성장"],
+   issue:["난개발과 해안 경관 훼손","부동산·임대료 상승","교통 혼잡·환경 부담"],
+   res:"화산 해안 절경, 올레길, 제주 로컬 식재료·문화",
+   hint:"경관을 해치지 않는 '지속가능한 카페 관광'은 어떤 모습일까?"}
+];
+
+const grid=document.getElementById('grid');
+const countEl=document.getElementById('count');
+const overlay=document.getElementById('overlay');
+const sheet=document.getElementById('sheet');
+let current="all", lastFocus=null;
+
+const TYPE_CLASS={"브랜드·노포형":"brand","재생 공간형":"renew","자연·관광형":"nature"};
+function badge(p){
+  const cls=TYPE_CLASS[p.type]||"area";
+  return `<span class="type-badge ${cls}">${p.type}</span>`;
+}
+
+function render(region){
+  grid.innerHTML="";
+  const list=PLACES.filter(p=>region==="all"||p.region===region);
+  list.forEach(p=>{
+    const idx=PLACES.indexOf(p);
+    const b=document.createElement('button');
+    b.className="card";
+    b.setAttribute("aria-haspopup","dialog");
+    b.innerHTML=`
+      <div class="top">
+        <div class="code"><span>${p.code} · ${p.region}</span><span>${String(idx+1).padStart(2,'0')}</span></div>
+        <h3>${p.name}</h3>
+        <div class="loc">${p.loc}</div>
+        ${badge(p)}
+      </div>
+      <div class="body">
+        <div class="feat">${p.feat}</div>
+        <span class="more mono">답사 노트 열기</span>
+      </div>`;
+    b.addEventListener('click',()=>openSheet(idx,b));
+    grid.appendChild(b);
+  });
+  countEl.textContent=`${list.length} / ${PLACES.length} SITES`;
+}
+
+function openSheet(idx,trigger){
+  const p=PLACES[idx];
+  lastFocus=trigger||document.activeElement;
+  sheet.innerHTML=`
+    <div class="sheet-top">
+      <button class="close" id="closeBtn" aria-label="닫기">✕</button>
+      <div class="code">${p.code} · ${p.region} · SITE ${String(idx+1).padStart(2,'0')}</div>
+      <h3 id="sheetName">${p.name}</h3>
+      <div class="loc">${p.loc}</div>
+      ${badge(p)}
+    </div>
+    <div class="sheet-body">
+      <div class="block"><span class="lab c-feat">특징</span><p>${p.feat}</p></div>
+      <div class="block"><span class="lab c-cycle">생성 과정</span>
+        <ol class="steps">${p.cycle.map(s=>`<li>${s}</li>`).join("")}</ol></div>
+      <div class="block"><span class="lab c-issue">정체성 이슈</span>
+        <ul class="bul">${p.issue.map(s=>`<li>${s}</li>`).join("")}</ul></div>
+      <div class="block"><span class="lab c-res">활용 가능한 지역 자원</span><p>${p.res}</p></div>
+      <div class="hint"><b>탐구 힌트</b>${p.hint}</div>
+    </div>`;
+  overlay.classList.add('open');
+  document.body.style.overflow="hidden";
+  document.getElementById('closeBtn').addEventListener('click',closeSheet);
+  document.getElementById('closeBtn').focus();
+}
+function closeSheet(){
+  overlay.classList.remove('open');
+  document.body.style.overflow="";
+  if(lastFocus)lastFocus.focus();
+}
+overlay.addEventListener('click',e=>{if(e.target===overlay)closeSheet();});
+document.addEventListener('keydown',e=>{if(e.key==="Escape"&&overlay.classList.contains('open'))closeSheet();});
+
+document.getElementById('filters').addEventListener('click',e=>{
+  const btn=e.target.closest('button');if(!btn)return;
+  current=btn.dataset.region;
+  [...document.querySelectorAll('#filters button')].forEach(b=>b.setAttribute('aria-pressed',b===btn));
+  render(current);
+});
+
+render("all");
+</script>
+</body>
+</html>
