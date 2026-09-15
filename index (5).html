@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>전국 핫플레이스 답사 지도</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;800;900&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{--paper:#ECEAE0;--paper-2:#F4F2EA;--ink:#191B24;--ink-soft:#4A4C57;--cobalt:#2B44CF;--coral:#FF4B57;--mustard:#C67C1E;--teal:#1B8A6B;--line:rgba(25,27,36,.16);--line-strong:rgba(25,27,36,.42);}
+  *{box-sizing:border-box;}
+  html{-webkit-text-size-adjust:100%;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.6;background-image:radial-gradient(var(--line) .8px,transparent .8px);background-size:22px 22px;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 20px;}
+  .mono{font-family:"IBM Plex Mono",monospace;}
+  .eyebrow{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.22em;text-transform:uppercase;color:var(--cobalt);font-weight:600;}
+  header.hero{border-bottom:2px solid var(--ink);padding:44px 0 22px;position:relative;overflow:hidden;}
+  .hero .tagrow{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+  .stamp{font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.7rem;letter-spacing:.14em;border:1.5px solid var(--coral);color:var(--coral);padding:5px 10px;border-radius:3px;transform:rotate(-3deg);text-transform:uppercase;}
+  h1.title{font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:clamp(2.3rem,7vw,4.6rem);line-height:.94;letter-spacing:-.01em;margin:0;}
+  h1.title .hl{color:var(--cobalt);}
+  .lede{margin:16px 0 0;max-width:56ch;font-size:1rem;color:var(--ink-soft);}
+  /* tabs */
+  .tabbar{position:sticky;top:0;z-index:30;background:var(--paper);border-bottom:2px solid var(--ink);}
+  .tabbar .wrap{display:flex;gap:0;}
+  .tabbtn{flex:1;background:transparent;border:none;border-right:1px solid var(--line);cursor:pointer;font-family:"Noto Sans KR",sans-serif;padding:16px 12px;text-align:left;color:var(--ink-soft);}
+  .tabbtn:last-child{border-right:none;}
+  .tabbtn .n{font-family:"Noto Sans KR",sans-serif;font-size:1.5rem;margin-right:10px;color:var(--line-strong);}
+  .tabbtn .tt{font-weight:700;font-size:1.02rem;}
+  .tabbtn .ts{display:block;font-size:.8rem;color:var(--ink-soft);margin-top:2px;}
+  .tabbtn[aria-selected="true"]{background:var(--ink);color:var(--paper);}
+  .tabbtn[aria-selected="true"] .n{color:var(--coral);}
+  .tabbtn[aria-selected="true"] .ts{color:rgba(244,242,234,.7);}
+  .tabpane{display:none;}
+  .tabpane.active{display:block;}
+  section{padding:38px 0;border-bottom:1px solid var(--line);}
+  .sec-head{display:flex;align-items:baseline;gap:14px;margin-bottom:22px;flex-wrap:wrap;}
+  .sec-head h2{font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:clamp(1.5rem,3.6vw,2rem);margin:0;}
+  .def{font-size:1.06rem;line-height:1.7;max-width:64ch;margin:0 0 24px;padding-left:18px;border-left:3px solid var(--mustard);}
+  .def b{font-weight:600;color:var(--cobalt);}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{font-size:.84rem;font-weight:500;background:var(--paper-2);border:1px solid var(--line);border-radius:100px;padding:6px 14px;}
+  .legend{display:flex;flex-wrap:wrap;gap:16px;margin-top:22px;}
+  .legend span{font-size:.82rem;font-weight:500;display:flex;align-items:center;gap:7px;}
+  .legend i{width:12px;height:12px;border-radius:3px;display:inline-block;}
+  .legend .l-area{background:var(--cobalt);}.legend .l-brand{background:var(--coral);}.legend .l-renew{background:var(--mustard);}.legend .l-nature{background:var(--teal);}
+  .cycle{display:grid;grid-template-columns:repeat(4,1fr);margin-top:28px;}
+  .phase{padding:18px 16px 20px;border-left:1px solid var(--line);}
+  .phase:first-child{border-left:2px solid var(--ink);}
+  .phase .num{font-family:"Noto Sans KR",sans-serif;font-weight:900;font-size:2.5rem;color:var(--cobalt);}
+  .phase:nth-child(3) .num,.phase:nth-child(4) .num{color:var(--coral);}
+  .phase h4{margin:8px 0 6px;font-size:1.32rem;}
+  .phase p{margin:0;font-size:1rem;line-height:1.5;color:var(--ink-soft);}
+  @media(max-width:720px){.cycle{grid-template-columns:1fr 1fr;}.phase:nth-child(3){border-left:2px solid var(--ink);}}
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin-bottom:22px;}
+  .filters{display:flex;flex-wrap:wrap;gap:8px;}
+  .filters button{font-family:"IBM Plex Mono",monospace;font-size:.8rem;font-weight:500;background:transparent;border:1.5px solid var(--line-strong);color:var(--ink);padding:7px 14px;border-radius:4px;cursor:pointer;}
+  .filters button[aria-pressed="true"]{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+  .count{font-family:"IBM Plex Mono",monospace;font-size:.78rem;color:var(--ink-soft);}
+  .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;}
+  @media(max-width:860px){.grid{grid-template-columns:1fr 1fr;}}
+  @media(max-width:560px){.grid{grid-template-columns:1fr;}}
+  .card{text-align:left;background:var(--paper-2);border:1.5px solid var(--ink);border-radius:6px;cursor:pointer;overflow:hidden;font-family:inherit;color:inherit;transition:transform .14s,box-shadow .14s;display:flex;flex-direction:column;box-shadow:3px 3px 0 rgba(25,27,36,.14);}
+  .card:hover,.card:focus-visible{transform:translate(-2px,-2px);box-shadow:6px 6px 0 var(--cobalt);outline:none;}
+  .thumb{width:100%;aspect-ratio:300/140;border-bottom:1.5px solid var(--ink);overflow:hidden;background:var(--paper);}
+  .thumb svg,.sheet-thumb svg{width:100%;height:100%;display:block;}
+  .phwrap{width:100%;height:100%;display:block;}
+  .thumb img.ph,.sheet-thumb img.ph,.wsthumb img.ph{width:100%;height:100%;object-fit:cover;display:block;background:var(--paper);}
+  .card .top{padding:14px 16px 12px;border-bottom:1px dashed var(--line-strong);}
+  .card .code{font-family:"IBM Plex Mono",monospace;font-size:.68rem;font-weight:600;letter-spacing:.12em;color:var(--coral);display:flex;justify-content:space-between;}
+  .card h3{font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:1.32rem;margin:6px 0 2px;letter-spacing:-.01em;}
+  .card .loc{font-size:.82rem;color:var(--ink-soft);margin-top:3px;}
+  .type-badge{font-family:"IBM Plex Mono",monospace;font-size:.62rem;font-weight:600;letter-spacing:.08em;padding:3px 9px;border-radius:100px;border:1.5px solid;display:inline-block;margin-top:9px;}
+  .type-badge.area{color:var(--cobalt);border-color:var(--cobalt);}.type-badge.brand{color:var(--coral);border-color:var(--coral);}.type-badge.renew{color:var(--mustard);border-color:var(--mustard);}.type-badge.nature{color:var(--teal);border-color:var(--teal);}
+  .card .body{padding:12px 16px 16px;display:flex;flex-direction:column;gap:10px;flex:1;}
+  .card .feat{font-size:.88rem;line-height:1.5;}
+  .card .more{margin-top:auto;font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;color:var(--cobalt);}
+  .card .more::after{content:" →";}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(25,27,36,.55);display:none;align-items:flex-start;justify-content:center;padding:26px 16px;z-index:50;overflow-y:auto;}
+  .overlay.open{display:flex;}
+  .sheet{background:var(--paper-2);border:2px solid var(--ink);border-radius:8px;max-width:640px;width:100%;box-shadow:10px 10px 0 rgba(43,68,207,.35);position:relative;overflow:hidden;}
+  .sheet-thumb{width:100%;aspect-ratio:300/140;border-bottom:2px solid var(--ink);overflow:hidden;background:var(--paper);}
+  .close{position:absolute;top:14px;right:16px;width:34px;height:34px;border-radius:50%;z-index:3;border:1.5px solid var(--ink);background:var(--paper-2);font-size:1.1rem;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+  .close:hover{background:var(--ink);color:var(--paper);}
+  .sheet-top{padding:20px 26px 16px;border-bottom:2px solid var(--ink);}
+  .sheet .code{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.12em;color:var(--coral);}
+  .sheet h3{font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:1.9rem;margin:8px 0 0;}
+  .sheet .loc{font-size:.9rem;color:var(--ink-soft);margin-top:6px;font-family:"IBM Plex Mono",monospace;}
+  .sheet-body{padding:20px 26px 26px;}
+  .rvrow{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0 4px;}
+  .rvbtn{display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-family:"IBM Plex Mono",monospace;font-size:.78rem;font-weight:600;padding:9px 14px;border-radius:5px;border:1.5px solid var(--ink);color:var(--paper-2);background:var(--ink);}
+  .rvbtn.alt{background:transparent;color:var(--ink);}
+  .rvbtn.yt{background:#C0392B;border-color:#C0392B;color:#fff;}
+  .rvbtn.yt:hover{background:#a52f22;border-color:#a52f22;}
+  .rvbtn:hover{background:var(--cobalt);border-color:var(--cobalt);color:#fff;}
+  .block{margin-bottom:20px;}
+  .block .lab{font-family:"IBM Plex Mono",monospace;font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;font-weight:600;margin-bottom:8px;display:inline-block;}
+  .lab.c-feat{color:var(--cobalt);border-bottom:2px solid var(--cobalt);}.lab.c-cycle{color:var(--ink);border-bottom:2px solid var(--ink);}.lab.c-issue{color:var(--coral);border-bottom:2px solid var(--coral);}.lab.c-res{color:var(--mustard);border-bottom:2px solid var(--mustard);}.lab.c-obs{color:var(--teal);border-bottom:2px solid var(--teal);}
+  .block p{margin:0;font-size:.95rem;line-height:1.6;}
+  ol.steps{margin:0;padding:0;list-style:none;counter-reset:s;}
+  ol.steps li{counter-increment:s;position:relative;padding:6px 0 6px 34px;font-size:.92rem;border-bottom:1px dotted var(--line);}
+  ol.steps li:last-child{border-bottom:none;}
+  ol.steps li::before{content:counter(s,decimal-leading-zero);position:absolute;left:0;top:6px;font-family:"IBM Plex Mono",monospace;font-weight:600;font-size:.8rem;color:var(--cobalt);}
+  ul.bul{margin:0;padding:0;list-style:none;}
+  ul.bul li{position:relative;padding:5px 0 5px 20px;font-size:.92rem;}
+  ul.bul li::before{content:"—";position:absolute;left:0;color:var(--coral);font-weight:600;}
+  .hint{background:rgba(198,124,30,.13);border:1px solid var(--mustard);border-radius:6px;padding:14px 16px;font-size:.9rem;}
+  .hint b{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;color:var(--mustard);display:block;margin-bottom:5px;text-transform:uppercase;}
+  .obsbox{background:rgba(27,138,107,.08);border:1px solid var(--teal);border-radius:6px;padding:14px 16px;}
+  .obscue{margin:0 0 10px;padding-left:18px;}
+  .obscue li{font-size:1.06rem;color:var(--ink);margin-bottom:7px;line-height:1.5;}
+  textarea.note{width:100%;min-height:110px;border:1.5px solid var(--line-strong);border-radius:6px;padding:10px 12px;font-family:inherit;font-size:1rem;line-height:1.55;resize:vertical;background:#fff;color:var(--ink);}
+  textarea.note:focus{outline:none;border-color:var(--cobalt);}
+  .savenote{font-size:.72rem;color:var(--ink-soft);margin-top:5px;font-family:"IBM Plex Mono",monospace;}
+  /* tab2 */
+  .banner2{background:var(--teal);color:#fff;padding:12px 0;}
+  .banner2 .wrap{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap;}
+  .banner2 h2{font-family:"Noto Sans KR",sans-serif;font-weight:800;margin:0;font-size:1.4rem;}
+  .banner2 p{margin:0;font-size:.86rem;opacity:.9;}
+  .picker{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:22px 0;}
+  .picker label{font-weight:700;}
+  select.psel{font-family:inherit;font-size:1rem;padding:10px 14px;border:1.5px solid var(--ink);border-radius:6px;background:#fff;color:var(--ink);min-width:260px;}
+  .refcard{background:var(--paper-2);border:1.5px solid var(--ink);border-radius:8px;padding:18px 20px;margin-bottom:24px;}
+  .refcard h4{margin:0 0 4px;font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:1.5rem;}
+  .refcard .loc{font-family:"IBM Plex Mono",monospace;font-size:.82rem;color:var(--ink-soft);}
+  .refgrid{margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+  @media(max-width:640px){.refgrid{grid-template-columns:1fr;}}
+  .refgrid .lab{font-family:"IBM Plex Mono",monospace;font-size:.7rem;letter-spacing:.14em;text-transform:uppercase;font-weight:600;color:var(--ink-soft);margin-bottom:6px;}
+  .qlist{margin:0;padding:0;list-style:none;}
+  .qlist li{position:relative;padding:4px 0 4px 22px;font-size:.9rem;}
+  .qlist li::before{content:"Q";position:absolute;left:0;top:4px;font-family:"IBM Plex Mono",monospace;font-weight:700;font-size:.78rem;color:var(--cobalt);}
+  .rlinks{display:flex;flex-direction:column;gap:6px;}
+  .rlink{display:flex;flex-direction:column;text-decoration:none;border:1px solid var(--line-strong);border-radius:5px;padding:8px 12px;}
+  .rlink:hover{border-color:var(--cobalt);background:rgba(43,68,207,.05);}
+  .rlink .rl-t{font-weight:600;font-size:.84rem;color:var(--cobalt);}
+  .rlink .rl-t::after{content:" ↗";}
+  .rlink .rl-n{font-size:.78rem;color:var(--ink-soft);margin-top:2px;}
+  .rl-road{font-size:.78rem;color:var(--cobalt);margin-top:5px;line-height:1.45;display:block;}
+  .ws-field{margin-bottom:22px;}
+  .ws-field .fl{font-weight:700;font-size:1.02rem;margin-bottom:2px;}
+  .ws-field .fh{font-size:.85rem;color:var(--ink-soft);margin-bottom:8px;}
+  .rubric{width:100%;border-collapse:collapse;margin-top:10px;font-size:.85rem;}
+  .rubric th,.rubric td{border:1px solid var(--line-strong);padding:8px 10px;text-align:left;vertical-align:top;}
+  .rubric th{background:var(--ink);color:var(--paper);font-weight:600;}
+  .rubric td:first-child{font-weight:600;white-space:nowrap;}
+  .printbtn{font-family:inherit;font-size:.92rem;font-weight:600;background:var(--ink);color:var(--paper);border:none;border-radius:6px;padding:11px 20px;cursor:pointer;}
+  .printbtn:hover{background:var(--cobalt);}
+  footer{padding:30px 0 54px;font-size:.8rem;color:var(--ink-soft);}
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important;}}
+  #wsSection #ws:empty::before{content:"위에서 핫플레이스를 선택하면, 관찰부터 작성까지 여기에서 이어집니다.";display:block;color:var(--ink-soft);padding:10px 0 24px;}
+  .wscard{display:flex;gap:18px;align-items:flex-start;flex-wrap:wrap;margin-bottom:6px;}
+  .wsthumb{width:300px;max-width:100%;aspect-ratio:300/150;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden;background:var(--paper);}
+  .wsthumb svg{width:100%;height:100%;display:block;}
+  .wshead{flex:1;min-width:240px;}
+  .wshead .code{font-family:"IBM Plex Mono",monospace;font-size:.72rem;font-weight:600;letter-spacing:.12em;color:var(--coral);}
+  .wshead h3{font-family:"Noto Sans KR",sans-serif;font-weight:800;font-size:1.9rem;margin:6px 0 0;}
+  .wshead .loc{font-size:.9rem;color:var(--ink-soft);margin-top:4px;font-family:"IBM Plex Mono",monospace;}
+  .refbox{border:1px solid var(--line-strong);border-radius:8px;padding:2px 16px;margin:16px 0;background:var(--paper-2);}
+  .refbox>summary{cursor:pointer;font-weight:700;padding:10px 0;}
+  .airule{padding:12px 14px;background:rgba(198,124,30,.12);border:1px solid var(--mustard);border-radius:6px;margin:18px 0;font-size:.9rem;line-height:1.55;}
+  .wsbtns{margin-top:8px;}
+  .wstop{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px;}
+  .backbtn{display:inline-flex;align-items:center;gap:6px;background:transparent;border:1.5px solid var(--line-strong);border-radius:6px;padding:8px 14px;font-family:inherit;font-weight:600;font-size:.88rem;cursor:pointer;color:var(--ink);}
+  .backbtn:hover{border-color:var(--ink);}
+  .donebtn{background:var(--teal);color:#fff;border:none;border-radius:6px;padding:9px 18px;font-family:inherit;font-weight:700;font-size:.9rem;cursor:pointer;}
+  .donebtn.on{background:#0f5c46;}
+  .card.done{box-shadow:3px 3px 0 var(--teal);}
+  .card.done .code span:last-child{color:var(--teal);font-weight:700;}
+  .stag{font-family:"IBM Plex Mono",monospace;font-size:.6rem;font-weight:600;color:#fff;background:var(--teal);border-radius:100px;padding:2px 7px;margin-left:6px;vertical-align:middle;}
+  .searchtip{font-size:.86rem;color:var(--ink-soft);background:rgba(43,68,207,.06);border:1px solid var(--line);border-radius:6px;padding:10px 12px;margin:8px 0 4px;line-height:1.5;}
+  .advstats{margin-top:8px;}
+  .advstats>summary{cursor:pointer;font-weight:600;font-size:.84rem;color:var(--ink-soft);padding:6px 0;}
+  .rectbox{margin-top:20px;}
+  .exprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center;}
+  .expbtn{background:var(--ink);color:var(--paper);border:none;border-radius:6px;padding:9px 14px;font-family:inherit;font-weight:600;font-size:.85rem;cursor:pointer;}
+  .expbtn:hover{background:var(--cobalt);}
+  .expbtn.alt{background:transparent;color:var(--ink);border:1.5px solid var(--ink);}
+  @media print{.tabbar,header.hero,#tab1,.no-print,footer{display:none!important;}body{background:#fff;}.refcard,.ws-field{break-inside:avoid;}}
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <div class="tagrow"><span class="eyebrow">한국지리 탐구 · 답사 노트</span><span class="stamp">Field Guide</span></div>
+    <h1 class="title">전국 <span class="hl">핫플레이스</span> 답사 지도</h1>
+    <p class="lede">골목과 낡은 공장이 어떻게 ‘뜨는 동네’가 되고, 또 어떤 고민을 안게 될까? 전국의 핫플레이스를 여행하고, 한 곳을 골라 그 성장을 직접 추적해 보자.</p>
+  </div>
+</header>
+
+
+<!-- ================= TAB 1 ================= -->
+<section id="concept"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">개념</span><h2>핫플레이스란?</h2></div>
+  <p class="def"><b>SNS와 입소문을 타고 짧은 기간에 사람들이 몰리는 인기 장소</b>다. 노후하거나 저렴했던 골목·산업 공간이 청년·예술가의 손을 거쳐 <b>개성 있는 소비·문화 공간</b>으로 재탄생하며 만들어지고, 때로는 <b>하나의 노포·공장·해변</b>이 도시를 대표하기도 한다.</p>
+  <div class="chips">
+    <span class="chip">SNS·미디어 확산</span><span class="chip">골목·노후 공간의 재해석</span><span class="chip">개성 있는 소규모 상점</span><span class="chip">청년·예술가 유입</span><span class="chip">지역 상징 노포·브랜드</span><span class="chip">빠른 유행 주기</span>
+  </div>
+  <div class="legend">
+    <span><i class="l-area"></i>골목·지구형</span><span><i class="l-brand"></i>브랜드·노포형</span><span><i class="l-renew"></i>재생 공간형</span><span><i class="l-nature"></i>자연·관광형</span>
+  </div>
+  <div class="cycle">
+    <div class="phase"><div class="num">01</div><h4>태동</h4><p>저렴한 공간에 예술가·청년이 모여 개성 있는 문화가 싹튼다.</p></div>
+    <div class="phase"><div class="num">02</div><h4>확산</h4><p>SNS·미디어를 타고 방문객이 몰린다.</p></div>
+    <div class="phase"><div class="num">03</div><h4>상업화</h4><p>대형 자본·프랜차이즈가 들어오고 임대료가 오른다.</p></div>
+    <div class="phase"><div class="num">04</div><h4>쇠퇴·재생</h4><p>초기 상인이 밀려나고(젠트리피케이션) 개성이 옅어진다.</p></div>
+  </div>
+</div></section>
+
+<section id="explore"><div class="wrap">
+  <div class="sec-head"><span class="eyebrow">답사</span><h2>전국 핫플레이스 35</h2></div>
+  <div class="toolbar">
+    <div class="filters" id="filters" role="group" aria-label="지역 필터">
+      <button data-region="all" aria-pressed="true">전체</button>
+      <button data-region="서울" aria-pressed="false">서울</button>
+      <button data-region="경기" aria-pressed="false">경기</button>
+      <button data-region="부산" aria-pressed="false">부산</button>
+      <button data-region="대구" aria-pressed="false">대구</button>
+      <button data-region="대전" aria-pressed="false">대전</button>
+      <button data-region="충남" aria-pressed="false">충남</button>
+      <button data-region="광주" aria-pressed="false">광주</button>
+      <button data-region="경남" aria-pressed="false">경남</button>
+      <button data-region="경북" aria-pressed="false">경북</button>
+      <button data-region="전북" aria-pressed="false">전북</button>
+      <button data-region="전남" aria-pressed="false">전남</button>
+      <button data-region="강원" aria-pressed="false">강원</button>
+      <button data-region="제주" aria-pressed="false">제주</button>
+    </div>
+    <span class="count mono" id="count"></span>
+      <span class="count mono" id="progress" style="color:var(--teal);margin-left:12px;"></span>
+  </div>
+  <div class="grid" id="grid"></div>
+</div></section>
+
+<section id="wsSection"><div class="wrap"><div class="sec-head"><span class="eyebrow">탐구</span><h2>핫플 성장 추적 · 수행평가</h2></div><div id="ws"></div></div></section>
+
+<footer><div class="wrap">성취기준 <span class="mono">[12한탐02-02]</span> · 사례 정보는 학습용 요약이며 현황은 변할 수 있음. 통계·언론은 실제 포털/검색으로 연결됩니다. 일부 사진 © Wikimedia Commons 기여자(CC BY-SA).</div></footer>
+
+
+<script>
+const PLACES=[
+{code:"SEL",region:"서울",type:"골목·지구형",name:"성수동",loc:"서울 성동구 성수동 · 성수역/서울숲",coords:"37.5446148,127.0580149",feat:"수제화 공장과 붉은벽돌 창고를 개조한 카페·편집숍·팝업스토어가 밀집한 서울 대표 트렌드 발신지.",cycle:["1970년대 수제화 공장·붉은벽돌 창고가 모인 준공업지역","2010년대 저렴한 임대료에 예술가·개성 있는 카페 유입","SNS·미디어 확산으로 방문객 급증","대기업 팝업·플래그십·패션기업(무신사 등) 진입"],issue:["임대료 급등으로 초기 상인·원주민이 밀려남(젠트리피케이션)","패션·뷰티 위주 업종 단일화와 팝업 획일화","기존 수제화 제조 기반의 쇠퇴"],res:"붉은벽돌 수제화 산업유산, 서울숲, 준공업 창고 건축 경관",hint:"성수동의 ‘붉은벽돌’과 수제화 기술을 관광 자원으로 되살릴 방법은?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"익선동",loc:"서울 종로구 익선동 · 종로3가역/창덕궁",coords:"37.5737132,126.9901271",feat:"서울에서 가장 오래된 도시한옥 밀집지. 좁은 골목의 한옥을 개조한 카페·소품숍이 특징.",cycle:["1920년대 도시형(개량) 한옥 밀집지로 조성","재개발 무산과 노후화로 쇠퇴","2010년대 한옥을 개조한 카페·소품숍 유입","SNS 확산으로 도심 대표 관광지화"],issue:["임대료 상승과 원주민 이탈","관광객 급증으로 주거·상업 갈등","한옥 경관 훼손 우려"],res:"도시한옥 군, 인접한 창덕궁·종묘·인사동 역사문화벨트",hint:"한옥 경관을 지키면서 상권도 유지하려면 어떤 규칙이 필요할까?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"을지로",loc:"서울 중구 을지로3~4가 · 세운상가",coords:"37.5670951,126.9918948",feat:"인쇄·공구 노포 사이에 숨은 감성 술집·카페가 공존하는 ‘힙지로’.",cycle:["도심 인쇄·공구 제조 상권으로 형성","제조업 쇠퇴와 저렴한 임대료","노포 사이에 청년 창업 술집·카페 유입","SNS 확산으로 신·구 상권 공존형 명소화"],issue:["세운재정비 등 재개발로 공구상 철거·이주","젠트리피케이션과 임대료 상승","도심 제조·인쇄 생태계 소멸 우려"],res:"도심 제조·인쇄 산업생태계, 노포, 세운상가",hint:"노포와 신상권이 함께 살아남는 상생 모델을 만들 수 있을까?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"홍대",loc:"서울 마포구 서교·동교동 · 홍대입구역",coords:"37.5561973,126.9250341",feat:"미술대학을 기반으로 자란 인디음악·클럽·거리공연의 중심지.",cycle:["홍익대 미술대학 기반 화방·작업실 밀집","인디밴드·클럽·거리공연 문화 형성","상업화와 방문객 급증","임대료 상승으로 예술·인디문화가 인근으로 확산"],issue:["대표적 젠트리피케이션(예술가·인디문화가 상수·연남·문래로 이탈)","프랜차이즈화로 개성 약화","관광·상업 소음 갈등"],res:"예술대학, 인디음악 인프라, 걷고 싶은 거리·거리공연 문화",hint:"‘뜨면 밀려나는’ 예술가를 붙잡을 지원책은 무엇일까?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"연남동",loc:"서울 마포구 연남동 · 경의선숲길(연트럴파크)",coords:"37.561952,126.9228316",feat:"경의선숲길을 따라 주택을 개조한 카페·식당이 늘어선 산책·데이트 명소.",cycle:["홍대 상권 확장의 배후 주택가","경의선숲길(연트럴파크) 조성으로 유동인구 증가","주택을 개조한 카페·식당으로 상권화","SNS 확산으로 산책·데이트 명소화"],issue:["주거지 상업화로 주민 생활 침해","임대료 상승","주차·소음·쓰레기 문제"],res:"경의선숲길 선형공원, 연남동 화교(중국) 문화",hint:"공원과 주거가 공존하는 관광 관리 방안은?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"이태원 경리단길",loc:"서울 용산구 이태원동 · 녹사평역",coords:"37.538432,126.9875466",feat:"개성 있는 가게로 급부상했다가 임대료 상승으로 빠르게 쇠퇴한 ‘○리단길’의 원조이자 젠트리피케이션의 상징.",cycle:["이태원 인근 한적한 언덕길에 개성 있는 맛집·바 유입","방송·SNS로 ‘경리단길’ 열풍, 방문객 급증","임대료 급등과 대형 프랜차이즈 진입","초기 가게 이탈·공실 증가로 상권 침체"],issue:["급격한 임대료 상승으로 원조 상인 이탈(젠트리피케이션)","‘○리단길’ 확산의 원조이자 쇠퇴의 상징","공실 증가와 상권 활력 저하"],res:"이태원의 다국적 문화, 남산·해방촌 연계 경관",hint:"한 번 식은 상권을 다시 살리려면 무엇이 필요할까?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"삼청동",loc:"서울 종로구 삼청동 · 경복궁/북촌",coords:"37.5837936,126.9819183",feat:"갤러리·한옥 카페로 사랑받았지만 국내에서 가장 먼저 젠트리피케이션을 겪은 골목.",cycle:["경복궁·북촌 옆 조용한 갤러리·공방 거리","한옥·골목 감성으로 카페·상점 유입, 관광지화","임대료 상승과 대형 브랜드·화장품 로드숍 진입","임대료 부담·관광 변화로 공실과 침체 반복"],issue:["이른 시기의 젠트리피케이션으로 개성 있는 가게 이탈","프랜차이즈화와 획일화","관광 경기에 민감한 상권 불안정"],res:"경복궁·북촌 한옥, 갤러리·미술관 밀집, 청와대 개방 이후 관광 동선",hint:"문화·예술 정체성을 지키는 임대 안정 방안은?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"신사동 가로수길",loc:"서울 강남구 신사동 · 신사역/압구정",coords:"37.5210566,127.0228686",feat:"패션·디자인 편집숍의 거리로 떴다가 대형 플래그십에 자리를 내준 젠트리피케이션 사례.",cycle:["가로수 늘어선 한적한 거리에 디자이너 숍·갤러리 유입","패션·감성 상권으로 유명세","임대료 급등, 대형 브랜드 플래그십·화장품 매장 진입","개성 있는 소규모 숍이 이면도로(‘세로수길’)로 밀려남"],issue:["임대료 상승으로 소규모 점포 이탈(젠트리피케이션)","대형 브랜드 위주 획일화","이면 상권으로의 풍선효과"],res:"가로수 경관, 압구정·강남 패션 상권 연계",hint:"대형 브랜드와 작은 가게가 공존할 방법은?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"문래동 창작촌",loc:"서울 영등포구 문래동 · 문래역",coords:"37.5149363,126.8947342",feat:"철공소 골목에 예술가 작업실과 카페가 스며들어 공존하는 산업유산 재생 골목.",cycle:["1960년대 이후 철공소·소규모 제조업 밀집지","2000년대 저렴한 임대료에 예술가 작업실 유입","철공소와 예술·카페가 뒤섞인 독특한 경관 형성","SNS 확산으로 방문객 증가·상업화"],issue:["상업화로 임대료 상승, 예술가·철공소 이탈 우려","제조업 생태계와 관광의 충돌(소음·안전)","젠트리피케이션 조짐"],res:"철공 제조 산업유산, 예술가 창작촌, 낮과 밤이 다른 골목 경관",hint:"철공소와 예술가가 함께 남는 방법을 설계한다면?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"신당동",loc:"서울 중구 신당동 · 신당역/약수역",coords:"37.5628915,127.0148396",feat:"떡볶이 골목의 오래된 상권이 독립서점·바 등으로 재해석된 ‘힙당동’.",cycle:["떡볶이 타운으로 알려진 오래된 상권","중앙시장 등 노포 사이 저렴한 공간에 청년 창업 유입","독립서점·칵테일바·편집숍 등 개성 있는 가게 형성","SNS 확산으로 ‘힙당동’ 명소화"],issue:["노포와 신상권의 공존·갈등","임대료 상승 조짐과 젠트리피케이션 우려","빠른 유행 주기"],res:"신당동 떡볶이·중앙시장 노포, 도심 접근성",hint:"떡볶이 골목의 원래 정체성을 어떻게 살릴까?"},
+{code:"GGD",region:"경기",type:"골목·지구형",name:"수원 행리단길",loc:"경기 수원시 팔달구 행궁동 · 화성행궁/장안문",coords:"37.2853077,127.0127544",feat:"세계유산 수원화성·화성행궁 옆 오래된 골목에 카페·공방·소품숍이 들어선 ‘행리단길’.",cycle:["화성행궁 주변 노후한 구도심 주택가·골목","저렴한 임대료에 청년 카페·공방·소품숍 유입","화성·행궁 관광과 결합해 SNS 확산","수원 대표 골목 상권으로 성장(‘행리단길’)"],issue:["‘○리단길’ 획일화와 임대료 상승","세계유산(화성) 경관·고도 제한과 상업화의 조화","주거지 상업화로 주민 생활 영향"],res:"세계유산 수원화성·화성행궁, 통닭거리, 구도심 골목",hint:"세계유산 화성과 골목 상권을 함께 살리는 방법은?"},
+{code:"BSN",region:"부산",type:"골목·지구형",name:"감천문화마을",loc:"부산 사하구 감천동 · 산복도로",coords:"35.0973935,129.0105921",feat:"산비탈 계단식 마을을 파스텔 도색·공공미술로 되살린 ‘한국의 마추픽추’.",cycle:["한국전쟁 피란민·태극도 신자 정착촌으로 형성","산비탈 계단식 마을, 낙후·인구 감소","2009년 공공미술 마을재생 프로젝트","파스텔 경관·벽화로 관광지화"],issue:["오버투어리즘(주민 사생활 침해·소음)","주거지의 과도한 관광지화","원주민 고령화·이탈"],res:"피란 역사, 산복도로 경관, 공공미술·골목",hint:"주민 생활을 지키는 ‘착한 관광’ 규칙을 만든다면?"},
+{code:"BSN",region:"부산",type:"골목·지구형",name:"전포 카페거리",loc:"부산 부산진구 전포동 · 서면역",coords:"35.155399,129.0673266",feat:"공구상가 사이로 개성 있는 카페가 파고든 ‘전리단길’.",cycle:["전포공구상가 등 공구·제조 상권","상권 쇠퇴와 저렴한 임대료","개성 있는 카페 유입(‘전리단길’)","CNN 등 소개로 확산·명소화"],issue:["젠트리피케이션과 임대료 상승","‘○리단길’식 획일화","기존 공구상 위축"],res:"서면 도심 접근성, 공구 산업유산",hint:"공구상가의 ‘기술과 손재주’를 콘텐츠로 만들 수 있을까?"},
+{code:"BSN",region:"부산",type:"골목·지구형",name:"영도 흰여울문화마을",loc:"부산 영도구 영선동 · 절영해안산책로",coords:"35.0782798,129.0453198",feat:"절벽 위 피란민 마을이 영화 촬영지와 해안 카페벨트로 되살아난 곳.",cycle:["한국전쟁 피란민이 절벽 위에 정착한 마을","낙후·인구 감소로 쇠퇴","영화 촬영지·벽화로 알려지며 방문객 증가","해안 조망 카페가 늘며 관광 명소화"],issue:["오버투어리즘(좁은 골목·주민 사생활 침해)","주거지의 관광지화","원주민 고령화"],res:"절영해안 절벽 경관, 피란 역사, 영도 카페벨트·조선산업 배후",hint:"감천문화마을과 무엇이 같고 다른지 비교해 본다면?"},
+{code:"BSN",region:"부산",type:"재생 공간형",name:"F1963",loc:"부산 수영구 망미동 · 망미역",coords:"35.1767015,129.11531",feat:"45년 된 고려제강 와이어 공장을 도서관·카페·공연장으로 바꾼 산업유산 재생 복합문화공간.",cycle:["1963년부터 가동된 고려제강 와이어 생산 공장","공장 이전으로 대규모 산업 공간이 비게 됨","2016년 부산비엔날레 등을 계기로 복합문화공간 재생","서점·카페·전시·공연장으로 시민 문화공간이자 관광지화"],issue:["산업유산 보존과 상업적 활용 사이의 균형","도심 외곽 접근성","재생 공간의 지속적 운영·콘텐츠 확보"],res:"와이어 공장 산업유산, 대형 실내외 공간, 인접 F1963 대나무숲",hint:"낡은 공장을 지역 문화 자원으로 오래 살리려면?"},
+{code:"BSN",region:"부산",type:"브랜드·노포형",name:"모모스커피",loc:"부산 금정구 부곡동(온천장) · 영도 로스터리",coords:"35.0961199,129.042549",feat:"월드 바리스타 챔피언을 배출한 스페셜티 커피 로스터리. 부산을 ‘커피 도시’로 알린 목적지형 카페.",cycle:["2007년 부산 온천장의 작은 테이크아웃 커피점으로 시작","직접 로스팅·품질로 마니아층 형성","2019·2023년 세계 바리스타 대회 우승으로 세계적 명성","영도 로스터리 등으로 확장, 부산 커피 관광의 중심"],issue:["유명세에 따른 방문객 혼잡·대기","브랜드 확장과 초기 로컬 감성 사이의 균형","상권 변화·젠트리피케이션 우려"],res:"부산 커피 산업 브랜드, 영도 재생·해안 경관, 원도심 커피벨트",hint:"한 카페의 명성을 부산 전체의 커피 관광으로 잇는 방법은?"},
+{code:"DGU",region:"대구",type:"골목·지구형",name:"김광석다시그리기길",loc:"대구 중구 대봉동 · 방천시장",coords:"35.8599664,128.6066296",feat:"쇠락한 방천시장 골목을 가수 김광석 이야기로 되살린 스토리텔링 재생 골목.",cycle:["대구 방천시장 인근 침체된 골목","가수 김광석을 주제로 한 벽화·조형물 조성","스토리텔링 명소로 방문객 유입","공연·축제와 결합해 관광 골목화"],issue:["특정 인물 콘텐츠 의존과 노후화","시장 상인과 관광의 상생","콘텐츠 재생산 부담"],res:"김광석 인물 스토리, 방천시장, 대구 근대골목 연계",hint:"인물 이야기 하나로 골목을 계속 살리려면 무엇이 더 필요할까?"},
+{code:"DJN",region:"대전",type:"브랜드·노포형",name:"성심당",loc:"대전 중구 은행동 · 대전역/으능정이",coords:"36.3276832,127.4273424",feat:"1956년 대전역 앞에서 시작해 대전에서만 파는 향토 빵집. 튀김소보로·부추빵으로 대전 여행의 필수 코스가 됨.",cycle:["1956년 대전역 앞 노점 찐빵집으로 출발","튀김소보로 등 독자 메뉴로 지역 명물화","‘대전에서만 판매’ 원칙으로 지역 정체성 강화","전국적 입소문으로 오픈런·대전 대표 관광자원화"],issue:["단일 매장 집중에 따른 오픈런·혼잡","대전역사 입점 수수료 등 임대 조건 갈등","지역 한정 원칙 유지 vs 확장 압력, 유사 브랜드 문제"],res:"대전 로컬 브랜드 정체성, 대전역·으능정이 스카이로드 원도심",hint:"‘대전에서만’이라는 원칙을 지키면서 관광을 넓히려면?"},
+{code:"DJN",region:"대전",type:"골목·지구형",name:"소제동",loc:"대전 동구 소제동 · 대전역 인근",coords:"36.3344064,127.4380453",feat:"일제강점기 철도 관사촌을 개조한 카페거리. 근대 건축과 재개발이 부딪히는 현장.",cycle:["일제강점기 대전역 철도 관사촌으로 조성","노후화로 쇠퇴한 근대 주택가","관사를 개조한 카페·전시공간 유입","SNS 확산으로 대전 대표 카페거리화"],issue:["재개발과 근대건축 보존의 충돌","젠트리피케이션과 원주민 이탈","관광지화 속 지역성 유지 문제"],res:"철도 관사 근대건축, 대전역·원도심 접근성",hint:"재개발과 근대유산 보존 사이의 균형점은 어디일까?"},
+{code:"GJU",region:"광주",type:"재생 공간형",name:"1913송정역시장",loc:"광주 광산구 · 광주송정역 앞",coords:"35.1370296,126.7922715",feat:"100년 넘은 역전 시장을 옛 간판·스토리텔링으로 되살린 전통시장 재생 사례.",cycle:["1913년 개설된 오래된 송정역 앞 시장","상권 침체로 쇠퇴","2016년 옛 정취를 살린 리모델링·스토리텔링 재생","KTX 송정역과 연계해 관광 시장화"],issue:["관광 시장과 생활 시장의 균형","임대료 상승·젠트리피케이션 우려","방문객 편중 시간대"],res:"역전 시장의 역사, KTX 송정역 접근성, 광주 근대 상권",hint:"구경하는 시장과 장 보는 시장을 어떻게 함께 살릴까?"},
+{code:"GJU",region:"광주",type:"골목·지구형",name:"양림동",loc:"광주 남구 양림동 · 사직공원 인근",coords:"35.140536,126.9175563",feat:"선교사 사택 등 근대 건축이 모인 ‘광주의 근대역사문화마을’.",cycle:["근대기 선교사·교육·의료 시설이 자리 잡은 마을","근대 건축과 한옥이 남은 채 노후화","근대문화유산 정비·펭귄마을 등 재생","근대역사 탐방·카페와 결합해 관광지화"],issue:["근대건축 보존과 상업화의 균형","주거지 관광지화","방문객 편중"],res:"선교사 사택 등 근대건축, 펭귄마을, 광주 근대사 스토리",hint:"근대건축을 살린 ‘이야기가 있는 관광’을 설계한다면?"},
+{code:"GNM",region:"경남",type:"골목·지구형",name:"통영 동피랑마을",loc:"경남 통영시 동호동 · 강구안 항구",coords:"34.8456408,128.4276137",feat:"철거 위기의 언덕 마을을 벽화로 되살려 한려수도를 내려다보는 명소로 존치.",cycle:["강구안 항구 위 언덕의 낙후 마을, 철거 예정","2007년 벽화 공모전 ‘동피랑 살리기’","벽화·골목 경관으로 존치·관광지화","한려수도 조망 명소로 정착"],issue:["오버투어리즘과 주민 사생활 침해","벽화 훼손·관리 부담","관광 수익의 주민 환원 문제"],res:"강구안 항구·수산, 통영 예술(윤이상·박경리·나전칠기), 한려수도 경관",hint:"통영의 예술·바다 자원을 마을 주민과 어떻게 연결할까?"},
+{code:"GNM",region:"경남",type:"골목·지구형",name:"통영 봉숫골",loc:"경남 통영시 봉평동 · 전혁림미술관",coords:"34.8265056,128.4151917",feat:"화가 전혁림의 미술관을 중심으로 벽화·공방·카페가 어우러진 예술 골목.",cycle:["통영 출신 화가 전혁림의 미술관이 자리한 골목","벚꽃길·예술 자원으로 방문객 관심","공방·카페·벽화가 더해지며 예술 골목화","동피랑과 함께 통영 예술관광 코스화"],issue:["예술 정체성과 상업화의 균형","방문객 편중·주거지 영향","콘텐츠 지속 관리"],res:"전혁림미술관·통영 예술, 봉숫골 벚꽃길, 통영 바다·공예(나전칠기)",hint:"통영의 예술가 자원을 마을 관광으로 잇는 방법은?"},
+{code:"GNM",region:"경남",type:"골목·지구형",name:"김해 봉리단길",loc:"경남 김해시 봉황동 · 봉황역/한옥체험관",coords:"35.2285843,128.8778821",feat:"오래된 주택가 골목에 청년 카페·상점이 들어선 김해의 ‘리단길’.",cycle:["봉황동 오래된 주택가 골목","저렴한 임대료에 청년 카페·상점 유입","SNS로 ‘봉리단길’ 알려짐","김해 원도심 대표 상권으로 성장"],issue:["‘○리단길’ 획일화","임대료 상승·젠트리피케이션 우려","가야 유적 등 지역색과의 연계 부족"],res:"가야 문화유산(봉황동 유적·수로왕릉), 김해 원도심, 한옥체험",hint:"가야의 역사 자원을 봉리단길과 어떻게 엮을 수 있을까?"},
+{code:"GBK",region:"경북",type:"골목·지구형",name:"경주 황리단길",loc:"경북 경주시 황남동 · 대릉원/첨성대",coords:"35.8376609,129.209724",feat:"신라 유적 대릉원 옆, 한옥·주택을 개조한 카페·상점이 고도 경관과 어우러진 거리.",cycle:["대릉원 옆 저층 주거지","한옥·주택을 개조한 카페·상점 유입","고도(古都) 경관과 결합해 SNS 확산","경주 대표 상권으로 성장(‘황리단길’)"],issue:["젠트리피케이션과 임대료 상승","‘○리단길’ 획일화","세계유산·문화재 주변 경관 관리"],res:"신라 왕경 유적(대릉원·첨성대), 한옥, 세계유산 도시 브랜드",hint:"유적 경관과 상권을 조화시키는 디자인 기준을 세운다면?"},
+{code:"JBK",region:"전북",type:"골목·지구형",name:"전주 한옥마을·원도심",loc:"전북 전주시 완산구 · 한옥마을·전동성당·남부시장",coords:"35.8175376,127.1520417",feat:"전통 한옥마을과 전동성당 등 근대건축, 청년몰로 되살아난 남부시장이 한데 어우러진 전주 원도심 관광 일번지.",cycle:["일제강점기 형성된 한옥 밀집지와 근대 상업·종교 거리(전동성당 등)","한옥 보존·정비 속 원도심 노후화","2010년대 한옥마을 관광 부흥과 남부시장 2층 청년몰 등 재생","한옥·근대건축·시장이 연결된 전국 대표 원도심 관광지화"],issue:["먹거리·프랜차이즈 위주 상업화·획일화","원주민 이탈·실거주 감소와 임대료 상승","관광이 한옥마을에 쏠려 근대역사거리·남부시장과의 활력 격차"],res:"한옥·한지·판소리 전통문화(경기전·향교), 전동성당 등 근대건축(풍남문·객사), 남부시장·청년몰",hint:"한옥마을에 몰린 관광을 근대역사거리·남부시장까지 어떻게 이어 붙일까?"},
+{code:"JBK",region:"전북",type:"브랜드·노포형",name:"군산 이성당",loc:"전북 군산시 중앙로 · 근대문화거리",coords:"35.9872034,126.7112687",feat:"1945년 문을 연 국내에서 가장 오래된 빵집. 단팥빵·야채빵으로 군산 근대 여행과 함께 찾는 명소.",cycle:["1945년 군산에서 제과점으로 출발","단팥빵·야채빵 등 대표 메뉴로 향토 명물화","군산 근대문화 관광 부흥과 함께 재조명","‘가장 오래된 빵집’ 브랜드로 전국적 명소화"],issue:["원조·유사 매장 논란과 상표 문제","노포의 계승·품질 유지 부담","특정 메뉴·매장 집중에 따른 혼잡"],res:"군산 근대건축·항구 역사(시간여행마을), 오래된 빵집 스토리",hint:"‘가장 오래된 빵집’ 이야기를 군산 근대 관광과 어떻게 엮을까?"},
+{code:"JNM",region:"전남",type:"골목·지구형",name:"목포 근대역사문화거리",loc:"전남 목포시 만호동 · 목포근대역사관",coords:"34.7875705,126.3820869",feat:"개항기 일본식 건물과 근대 거리가 남아 근대문화 관광지로 재조명된 원도심.",cycle:["개항 이후 형성된 근대 상업·행정 거리","산업 쇠퇴로 원도심 침체","근대건축 보존·근대역사관 조성","드라마·근대문화 관광으로 재조명"],issue:["근대건축(일제 잔재)의 보존·해석 논쟁","원도심 공동화","관광과 주민 생활의 조화"],res:"개항기 근대건축, 목포항·유달산 경관, 근대역사관",hint:"아픈 역사도 담긴 근대 유산을 어떻게 관광 자원으로 풀어낼까?"},
+{code:"GWN",region:"강원",type:"자연·관광형",name:"강릉 안목 커피거리",loc:"강원 강릉시 견소동 · 안목해변",coords:"37.7732303,128.9454765",feat:"동해 해변을 따라 로스터리 카페가 늘어선 ‘커피도시 강릉’의 상징.",cycle:["동해 해변의 자판기 커피 명소","로스터리·바리스타 카페 유입","‘커피도시 강릉’ 브랜드·커피축제","해변 카페거리로 관광 명소화"],issue:["성수기 혼잡·주차 문제","상업화·프랜차이즈 확산","해변 경관·환경 부담"],res:"동해 해변 경관, 커피 산업 브랜드, 커피축제",hint:"‘커피도시’ 브랜드를 사계절 관광으로 넓히려면?"},
+{code:"GWN",region:"강원",type:"자연·관광형",name:"양양 서피비치",loc:"강원 양양군 현북면 · 하조대해변",coords:"38.0289168,128.7175256",feat:"서핑 문화가 만든 신흥 해변 관광지. 자연 자원과 라이프스타일이 결합한 사례.",cycle:["동해의 좋은 파도 조건에 서퍼들이 모임","서핑 강습·비치클럽 등 인프라 형성","이국적 해변 문화로 SNS 확산","양양이 ‘서핑 성지’로 브랜드화"],issue:["성수기 혼잡·소음·환경 부담","계절·날씨에 민감한 관광 수요","지역 주민과 관광객의 문화 차이"],res:"동해 파도·해변 경관, 서핑 라이프스타일, 하조대 등 자연자원",hint:"‘자연 자원 + 놀이문화’를 사계절 관광으로 넓히려면?"},
+{code:"JEJ",region:"제주",type:"자연·관광형",name:"제주 애월 카페거리",loc:"제주 제주시 애월읍 · 한담해변",coords:"33.4642136,126.3089572",feat:"해안도로를 따라 화산 해안 절경과 어우러진 카페가 이어지는 제주 대표 카페거리.",cycle:["애월 해안도로 변 카페 입지","해안 절경과 결합한 카페 상권 형성","SNS·드라마 노출로 확산","제주 대표 카페거리로 성장"],issue:["난개발과 해안 경관 훼손","부동산·임대료 상승","교통 혼잡·환경 부담"],res:"화산 해안 절경, 올레길, 제주 로컬 식재료·문화",hint:"경관을 해치지 않는 ‘지속가능한 카페 관광’은 어떤 모습일까?"},
+{code:"CCN",region:"충남",type:"재생 공간형",name:"예산시장",loc:"충남 예산군 예산읍 · 예산상설시장",coords:"36.6772381,126.8495587",feat:"쇠퇴하던 전통시장을 백종원·예산군이 되살려 누적 1천만 명이 찾는 뉴트로 먹거리 성지가 된 지방 재생의 대표 사례.",cycle:["1920년대 오일장에서 출발한 예산 특산물 집산 상설시장","이촌향도로 점포 절반이 폐업, 지방소멸 위기","2022~2023년 더본코리아·예산군의 시장 리모델링·먹거리 재생","SNS·먹방 확산으로 전통시장 재생의 전국 모델화"],issue:["폭발적 방문에 따른 주말 혼잡·주차난·대기","특정 기업·인물 의존과 지속가능성 논란","원주민 상인과 새 점포의 상생, 물가·바가지 우려"],res:"예산 특산물(사과·축산), 오일장·전통시장, 백종원 브랜드·K-푸드 콘텐츠",hint:"한 시장의 성공을 다른 소멸위기 지역으로 어떻게 넓힐 수 있을까?"},
+{code:"SEL",region:"서울",type:"골목·지구형",name:"북촌 한옥마을",loc:"서울 종로구 가회동 · 안국역/경복궁",coords:"37.5814696,126.9849519",feat:"경복궁과 창덕궁 사이 언덕에 전통 한옥이 밀집한 서울 대표 한옥 관광지.",cycle:["조선시대 사대부 주거지에서 근대 개량 한옥촌으로 형성","한옥 보존지구 지정·정비","한옥 경관·골목이 SNS·외국인 관광으로 확산","서울 대표 한옥 관광지로 급성장"],issue:["오버투어리즘으로 관광객 통제·방문 제한까지 시행(주민 사생활·소음)","실거주 감소와 상업화","한옥 경관 보존과 개발 압력의 충돌"],res:"북촌 한옥, 경복궁·창덕궁·삼청동 연계 역사문화벨트, 전통공방",hint:"관광과 주민 생활이 부딪히는 북촌에서 ‘착한 관광’ 규칙은?"},
+{code:"JNM",region:"전남",type:"자연·관광형",name:"여수 밤바다·낭만포차",loc:"전남 여수시 중앙동 · 이순신광장/낭만포차거리",coords:"34.7364135,127.7493336",feat:"노래로 유명해진 여수 밤바다와 해안 낭만포차·해상케이블카가 어우러진 남해안 대표 관광 핫플.",cycle:["여수엑스포(2012)와 노래 ‘여수 밤바다’로 전국적 인지도","해안 야경·낭만포차거리·해상케이블카 등 관광 인프라 확충","SNS·드라마로 야간 관광 명소화","남해안 대표 관광도시로 성장"],issue:["성수기 극심한 혼잡·교통난과 바가지 논란","야간 관광 편중과 소음·환경 부담","관광 수익의 지역 환원·상생"],res:"여수 밤바다·해안 경관, 해상케이블카·오동도, 수산물·포차 먹거리",hint:"‘밤바다’ 이미지에 기댄 관광을 사계절·낮 시간으로 넓히려면?"},
+{code:"GWN",region:"강원",type:"자연·관광형",name:"속초 아바이마을·수산시장",loc:"강원 속초시 청호동·중앙동 · 갯배/관광수산시장",coords:"38.2044495,128.5901534",feat:"실향민이 세운 아바이마을과 관광수산시장·갯배가 어우러진 동해안 대표 먹거리·관광 명소.",cycle:["한국전쟁 실향민(함경도)이 청호동에 정착한 아바이마을","아바이순대·오징어순대 등 향토 먹거리로 알려짐","드라마 촬영·갯배 체험으로 관광지화","관광수산시장·해변과 묶여 동해안 대표 관광 코스로 성장"],issue:["성수기 혼잡·주차난과 상업화","실향민 1세대 감소로 원형·정체성 유지 문제","해변·시장 관광 편중과 물가"],res:"실향민(피란) 역사·아바이 먹거리, 갯배·청초호, 설악산·속초해변 연계",hint:"실향민 마을의 역사를 어떻게 관광 자원으로 지켜갈까?"}
+];
+const ART_DEFAULT=`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDECE6'/><rect x='110' y='50' width='80' height='64' fill='#2B44CF'/><rect y='114' width='300' height='26' fill='#191B24'/></svg>`;
+const ART={
+"성수동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect x='36' y='40' width='228' height='74' fill='#C0392B'/><g stroke='#F0ECE2' stroke-width='3'><line x1='36' y1='58' x2='264' y2='58'/><line x1='36' y1='76' x2='264' y2='76'/><line x1='36' y1='94' x2='264' y2='94'/><line x1='96' y1='40' x2='96' y2='114'/><line x1='156' y1='40' x2='156' y2='114'/><line x1='216' y1='40' x2='216' y2='114'/></g><rect x='128' y='84' width='44' height='30' fill='#191B24'/><rect x='52' y='46' width='26' height='9' fill='#F4F2EA'/><rect x='226' y='46' width='26' height='9' fill='#F4F2EA'/><rect y='114' width='300' height='26' fill='#191B24'/></svg>`,
+"익선동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><rect x='60' y='84' width='180' height='30' fill='#D9C7A8'/><path d='M40 88 Q150 54 260 88 L260 92 Q150 62 40 92 Z' fill='#191B24'/><path d='M70 112 Q150 92 230 112 L230 114 Q150 96 70 114 Z' fill='#3A3F52'/><rect x='132' y='90' width='26' height='24' fill='#191B24'/><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"을지로":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#23283F'/><rect x='70' y='30' width='160' height='84' fill='#2E3450'/><rect x='96' y='44' width='108' height='40' rx='4' fill='none' stroke='#FF4B57' stroke-width='4'/><line x1='150' y1='84' x2='150' y2='104' stroke='#FF4B57' stroke-width='3'/><circle cx='118' cy='64' r='5' fill='#E9C33B'/><circle cx='150' cy='64' r='5' fill='#E9C33B'/><circle cx='182' cy='64' r='5' fill='#E9C33B'/><rect x='120' y='104' width='60' height='10' fill='#191B24'/><rect y='114' width='300' height='26' fill='#191B24'/></svg>`,
+"홍대":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#2B44CF'/><g transform='rotate(-18 130 78)'><rect x='125' y='28' width='10' height='58' fill='#F4F2EA'/><rect x='123' y='22' width='14' height='9' fill='#191B24'/><ellipse cx='130' cy='104' rx='34' ry='26' fill='#191B24'/><circle cx='130' cy='102' r='9' fill='#FF4B57'/></g><text x='206' y='58' font-size='36' fill='#F4F2EA' font-family='sans-serif'>♪</text><text x='234' y='96' font-size='26' fill='#E9C33B' font-family='sans-serif'>♫</text></svg>`,
+"연남동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EAF2E9'/><rect y='96' width='300' height='44' fill='#D9CBAF'/><polygon points='150,96 112,140 188,140' fill='#C9B896'/><g fill='#1B8A6B'><circle cx='70' cy='68' r='26'/><circle cx='232' cy='68' r='26'/><circle cx='100' cy='84' r='17'/><circle cx='202' cy='84' r='17'/></g><rect x='66' y='90' width='8' height='16' fill='#5A4632'/><rect x='228' y='90' width='8' height='16' fill='#5A4632'/></svg>`,
+"이태원 경리단길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><polygon points='0,122 300,58 300,140 0,140' fill='#D9CBAF'/><rect x='40' y='56' width='72' height='54' fill='#B9B3A6'/><rect x='46' y='68' width='60' height='38' fill='#8C8578'/><g stroke='#F0ECE2' stroke-width='2'><line x1='46' y1='78' x2='106' y2='78'/><line x1='46' y1='88' x2='106' y2='88'/><line x1='46' y1='98' x2='106' y2='98'/></g><rect x='182' y='40' width='72' height='58' fill='#FF4B57' opacity='.6'/><text x='198' y='75' font-size='22' fill='#191B24' font-family='sans-serif'>임대</text></svg>`,
+"삼청동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><path d='M150 34 Q210 20 268 40 L268 44 Q210 26 150 40 Z' fill='#191B24'/><rect x='40' y='40' width='96' height='74' fill='#F4F2EA' stroke='#191B24' stroke-width='5'/><circle cx='74' cy='64' r='12' fill='#E9C33B'/><polygon points='56,100 84,70 108,100' fill='#1B8A6B'/><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"신사동 가로수길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect y='110' width='300' height='30' fill='#D9CBAF'/><g fill='#1B8A6B'><circle cx='54' cy='62' r='24'/><circle cx='120' cy='62' r='24'/><circle cx='186' cy='62' r='24'/></g><g fill='#5A4632'><rect x='50' y='82' width='8' height='28'/><rect x='116' y='82' width='8' height='28'/><rect x='182' y='82' width='8' height='28'/></g><rect x='226' y='72' width='40' height='38' fill='#FF4B57'/><path d='M234 72 v-8 a12 8 0 0 1 24 0 v8' fill='none' stroke='#191B24' stroke-width='3'/></svg>`,
+"문래동 창작촌":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDECE6'/><circle cx='92' cy='74' r='34' fill='#191B24'/><circle cx='92' cy='74' r='14' fill='#EDECE6'/><g fill='#191B24'><rect x='86' y='32' width='12' height='14'/><rect x='86' y='102' width='12' height='14'/><rect x='50' y='68' width='14' height='12'/><rect x='120' y='68' width='14' height='12'/></g><g stroke='#C67C1E' stroke-width='5' fill='none'><line x1='198' y1='40' x2='198' y2='112'/><line x1='172' y1='112' x2='224' y2='112'/></g><rect x='178' y='48' width='44' height='34' fill='#FF4B57' stroke='#191B24' stroke-width='3'/></svg>`,
+"신당동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#2B2540'/><ellipse cx='150' cy='96' rx='74' ry='22' fill='#F4F2EA'/><path d='M76 94 a74 22 0 0 0 148 0 Z' fill='#FF4B57'/><g fill='#E9C33B'><rect x='120' y='80' width='12' height='22' rx='6'/><rect x='142' y='78' width='12' height='24' rx='6'/><rect x='164' y='80' width='12' height='22' rx='6'/></g><circle cx='150' cy='40' r='14' fill='none' stroke='#FF4B57' stroke-width='4'/></svg>`,
+"수원 행리단길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><rect x='60' y='58' width='120' height='56' fill='#C9B896'/><path d='M96 114 v-30 a24 24 0 0 1 48 0 v30 Z' fill='#191B24'/><rect x='54' y='46' width='132' height='14' fill='#8A744E'/><rect x='118' y='30' width='4' height='16' fill='#191B24'/><polygon points='122,30 122,44 150,37 Z' fill='#FF4B57'/><rect x='206' y='66' width='40' height='40' rx='5' fill='#191B24'/><path d='M246 74 h10 a9 9 0 0 1 0 18 h-10' fill='none' stroke='#191B24' stroke-width='6'/><rect y='114' width='300' height='26' fill='#8A744E'/></svg>`,
+"감천문화마을":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#E3EEF2'/><g stroke='#191B24' stroke-width='2'><rect x='30' y='96' width='44' height='30' fill='#F2B5C4'/><rect x='74' y='84' width='44' height='42' fill='#A7D3E0'/><rect x='118' y='72' width='44' height='54' fill='#F6D384'/><rect x='162' y='84' width='44' height='42' fill='#B7D9B0'/><rect x='206' y='96' width='44' height='30' fill='#C9B5DE'/></g><g fill='#191B24'><rect x='90' y='100' width='10' height='12'/><rect x='134' y='90' width='10' height='12'/><rect x='178' y='100' width='10' height='12'/></g></svg>`,
+"전포 카페거리":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect x='70' y='58' width='72' height='52' rx='6' fill='#191B24'/><path d='M142 66 h18 a14 14 0 0 1 0 28 h-18' fill='none' stroke='#191B24' stroke-width='7'/><path d='M88 40 q8 -12 0 -20 M106 40 q8 -12 0 -20 M124 40 q8 -12 0 -20' stroke='#C67C1E' stroke-width='3' fill='none'/><g transform='rotate(35 210 78)' fill='#7A7468'><rect x='203' y='40' width='14' height='70' rx='4'/><circle cx='210' cy='40' r='12'/><circle cx='210' cy='40' r='5' fill='#F0ECE2'/></g></svg>`,
+"영도 흰여울문화마을":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#CDE6EC'/><rect y='96' width='300' height='44' fill='#5FA9BE'/><rect y='96' width='300' height='6' fill='#3E8AA0'/><g stroke='#191B24' stroke-width='2'><rect x='40' y='64' width='40' height='32' fill='#F4F2EA'/><rect x='80' y='72' width='40' height='24' fill='#F2B5C4'/><rect x='120' y='60' width='40' height='36' fill='#A7D3E0'/></g><rect x='222' y='48' width='16' height='48' fill='#F4F2EA' stroke='#191B24' stroke-width='2'/><polygon points='220,48 240,48 230,36' fill='#FF4B57'/><rect x='224' y='60' width='12' height='8' fill='#E9C33B'/></svg>`,
+"F1963":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDECE6'/><rect x='40' y='60' width='120' height='54' fill='#7A7468'/><polygon points='40,60 70,44 100,60 130,44 160,60' fill='#7A7468'/><rect x='150' y='36' width='16' height='78' fill='#5A5449'/><path d='M200 66 q30 -14 60 0 v40 q-30 -12 -60 0 Z' fill='#2B44CF'/><line x1='230' y1='60' x2='230' y2='108' stroke='#EDECE6' stroke-width='3'/><rect y='114' width='300' height='26' fill='#191B24'/></svg>`,
+"모모스커피":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><polygon points='68,50 152,50 128,88 92,88' fill='none' stroke='#191B24' stroke-width='5'/><rect x='104' y='88' width='12' height='16' fill='#191B24'/><ellipse cx='110' cy='120' rx='24' ry='7' fill='#6B4A2B'/><g fill='#E9C33B' stroke='#191B24' stroke-width='2'><path d='M196 46 h48 v10 a24 20 0 0 1 -48 0 Z'/><rect x='214' y='72' width='12' height='14'/><rect x='200' y='86' width='40' height='8'/></g></svg>`,
+"김광석다시그리기길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#2B44CF'/><circle cx='100' cy='58' r='24' fill='#191B24'/><g stroke='#F4F2EA' stroke-width='2'><line x1='84' y1='50' x2='116' y2='50'/><line x1='84' y1='58' x2='116' y2='58'/><line x1='84' y1='66' x2='116' y2='66'/></g><rect x='96' y='82' width='8' height='32' fill='#191B24'/><text x='176' y='64' font-size='40' fill='#E9C33B' font-family='sans-serif'>♪</text><text x='210' y='100' font-size='28' fill='#F4F2EA' font-family='sans-serif'>♫</text></svg>`,
+"성심당":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F5EDDD'/><ellipse cx='150' cy='84' rx='72' ry='44' fill='#C67C1E'/><ellipse cx='150' cy='80' rx='60' ry='36' fill='#E0A64A'/><g fill='#8A5A22'><circle cx='120' cy='70' r='5'/><circle cx='150' cy='62' r='5'/><circle cx='180' cy='72' r='5'/><circle cx='134' cy='90' r='5'/><circle cx='168' cy='90' r='5'/></g></svg>`,
+"소제동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDECE6'/><polygon points='40,86 150,58 150,78 40,106' fill='none' stroke='#191B24' stroke-width='4'/><g stroke='#191B24' stroke-width='4'><line x1='60' y1='100' x2='68' y2='80'/><line x1='90' y1='94' x2='96' y2='76'/><line x1='120' y1='88' x2='124' y2='72'/></g><polygon points='180,70 226,52 272,70' fill='#C0392B'/><rect x='192' y='70' width='68' height='40' fill='#D9C7A8'/><rect x='218' y='86' width='18' height='24' fill='#191B24'/><rect y='114' width='300' height='26' fill='#8C8578'/></svg>`,
+"1913송정역시장":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect x='40' y='60' width='220' height='54' fill='#E8E2D4'/><path d='M34 60 h232 l-14 22 h-204 Z' fill='#FF4B57'/><rect x='120' y='38' width='60' height='22' fill='#191B24'/><text x='150' y='54' font-size='14' fill='#E9C33B' font-family='sans-serif' text-anchor='middle'>1913</text><rect x='90' y='84' width='24' height='30' fill='#C67C1E'/><rect x='150' y='84' width='24' height='30' fill='#C67C1E'/><rect x='210' y='84' width='24' height='30' fill='#C67C1E'/></svg>`,
+"양림동":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><rect x='90' y='46' width='120' height='68' fill='#C0392B'/><polygon points='90,46 150,20 210,46' fill='#8A2A20'/><g fill='#F4F2EA'><rect x='108' y='60' width='18' height='28' rx='9'/><rect x='141' y='60' width='18' height='28' rx='9'/><rect x='174' y='60' width='18' height='28' rx='9'/></g><rect x='146' y='6' width='8' height='20' fill='#191B24'/><rect x='140' y='12' width='20' height='7' fill='#191B24'/><rect y='114' width='300' height='26' fill='#8C8578'/></svg>`,
+"통영 동피랑마을":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#CDE6EC'/><rect y='104' width='300' height='36' fill='#5FA9BE'/><g stroke='#191B24' stroke-width='2'><rect x='40' y='70' width='36' height='34' fill='#F2B5C4'/><rect x='76' y='58' width='36' height='46' fill='#F6D384'/><rect x='112' y='72' width='36' height='32' fill='#A7D3E0'/></g><circle cx='58' cy='84' r='7' fill='#FF4B57'/><path d='M200 104 h60 l-8 14 h-44 Z' fill='#C0392B'/><rect x='226' y='84' width='4' height='20' fill='#191B24'/><polygon points='230,84 250,96 230,100' fill='#F4F2EA'/></svg>`,
+"통영 봉숫골":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F5EEF2'/><path d='M60 48 a54 44 0 1 0 0 62 a14 12 0 0 1 0 -26 a10 9 0 0 0 0 -12 Z' fill='#F4F2EA' stroke='#191B24' stroke-width='3'/><circle cx='60' cy='58' r='7' fill='#FF4B57'/><circle cx='40' cy='78' r='7' fill='#2B44CF'/><circle cx='52' cy='98' r='7' fill='#E9C33B'/><circle cx='82' cy='90' r='7' fill='#1B8A6B'/><g transform='rotate(40 200 78)'><rect x='196' y='38' width='9' height='60' fill='#C67C1E'/><rect x='194' y='96' width='13' height='16' fill='#191B24'/><polygon points='194,112 207,112 200,124' fill='#FF4B57'/></g><g fill='#F2B5C4'><circle cx='250' cy='40' r='6'/><circle cx='262' cy='34' r='6'/><circle cx='258' cy='50' r='6'/></g></svg>`,
+"김해 봉리단길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><path d='M78 50 q40 -18 80 0 q-6 40 -40 60 q-34 -20 -40 -60 Z' fill='#8A5A3B' stroke='#191B24' stroke-width='2'/><rect x='104' y='40' width='30' height='12' fill='#8A5A3B' stroke='#191B24' stroke-width='2'/><g stroke='#5A3A24' stroke-width='2' fill='none'><path d='M92 74 q26 8 52 0'/><path d='M96 88 q22 7 44 0'/></g><rect x='196' y='64' width='46' height='40' rx='5' fill='#191B24'/><path d='M242 72 h12 a10 10 0 0 1 0 20 h-12' fill='none' stroke='#191B24' stroke-width='6'/></svg>`,
+"경주 황리단길":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F3ECD9'/><path d='M96 40 q40 40 0 80 q-40 -40 0 -80 Z' fill='#B79B6E' stroke='#191B24' stroke-width='2'/><rect x='108' y='36' width='30' height='8' fill='#191B24'/><rect x='114' y='72' width='16' height='14' fill='#5A4632'/><path d='M186 96 Q234 70 282 96 L282 100 Q234 78 186 100 Z' fill='#191B24'/><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"전주 한옥마을":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><path d='M40 86 Q120 50 200 86 L200 92 Q120 60 40 92 Z' fill='#191B24'/><rect x='60' y='88' width='120' height='26' fill='#D9C7A8'/><rect x='104' y='92' width='24' height='22' fill='#191B24'/><g transform='translate(230 58)'><path d='M0 42 L44 8 A46 46 0 0 1 44 42 Z' fill='#FF4B57' stroke='#191B24' stroke-width='2'/><g stroke='#191B24' stroke-width='1.5'><line x1='0' y1='42' x2='40' y2='14'/><line x1='0' y1='42' x2='44' y2='26'/><line x1='0' y1='42' x2='44' y2='38'/></g></g><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"전주 한옥마을·원도심":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><path d='M40 86 Q120 50 200 86 L200 92 Q120 60 40 92 Z' fill='#191B24'/><rect x='60' y='88' width='120' height='26' fill='#D9C7A8'/><rect x='104' y='92' width='24' height='22' fill='#191B24'/><g transform='translate(230 58)'><path d='M0 42 L44 8 A46 46 0 0 1 44 42 Z' fill='#FF4B57' stroke='#191B24' stroke-width='2'/><g stroke='#191B24' stroke-width='1.5'><line x1='0' y1='42' x2='40' y2='14'/><line x1='0' y1='42' x2='44' y2='26'/><line x1='0' y1='42' x2='44' y2='38'/></g></g><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"전주 근대역사거리":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><rect x='96' y='54' width='108' height='60' fill='#C0392B'/><rect x='138' y='30' width='24' height='24' fill='#C0392B'/><path d='M138 32 a12 12 0 0 1 24 0 Z' fill='#8A2A20'/><rect x='148' y='8' width='4' height='14' fill='#191B24'/><rect x='143' y='12' width='14' height='4' fill='#191B24'/><g fill='#F4F2EA'><rect x='110' y='72' width='16' height='32' rx='8'/><rect x='142' y='72' width='16' height='32' rx='8'/><rect x='174' y='72' width='16' height='32' rx='8'/></g><rect y='114' width='300' height='26' fill='#8C8578'/></svg>`,
+"전주 남부시장 청년몰":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect x='40' y='66' width='200' height='48' fill='#E8E2D4' stroke='#191B24' stroke-width='2'/><path d='M34 66 h212 l-12 -20 h-188 Z' fill='#2B44CF'/><g fill='#C67C1E'><rect x='64' y='88' width='24' height='26'/><rect x='128' y='88' width='24' height='26'/><rect x='192' y='88' width='24' height='26'/></g><circle cx='212' cy='38' r='18' fill='#E9C33B' stroke='#191B24' stroke-width='2'/><rect x='206' y='52' width='12' height='8' fill='#191B24'/><g stroke='#E9C33B' stroke-width='3'><line x1='212' y1='12' x2='212' y2='4'/><line x1='236' y1='38' x2='244' y2='38'/></g></svg>`,
+"군산 이성당":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F5EDDD'/><rect x='60' y='40' width='180' height='30' fill='#C0392B'/><text x='150' y='62' font-size='16' fill='#F4F2EA' font-family='sans-serif' text-anchor='middle'>1945</text><rect x='70' y='70' width='160' height='44' fill='#E8E2D4' stroke='#191B24' stroke-width='2'/><ellipse cx='150' cy='94' rx='40' ry='18' fill='#E0A64A' stroke='#8A5A22' stroke-width='2'/><path d='M132 94 h36' stroke='#8A5A22' stroke-width='3'/></svg>`,
+"목포 근대역사문화거리":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#E3EEF2'/><polygon points='150,44 220,104 80,104' fill='#7F9AA6'/><rect y='104' width='300' height='36' fill='#5FA9BE'/><rect x='40' y='62' width='50' height='52' fill='#D9C7A8' stroke='#191B24' stroke-width='2'/><polygon points='40,62 65,48 90,62' fill='#C0392B'/><g fill='#191B24'><rect x='50' y='72' width='12' height='12'/><rect x='68' y='72' width='12' height='12'/><rect x='50' y='92' width='12' height='20'/></g><path d='M212 108 h48 l-6 10 h-36 Z' fill='#191B24'/></svg>`,
+"강릉 안목 커피거리":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#E3EEF2'/><path d='M0 100 q30 -16 60 0 t60 0 t60 0 t60 0 t60 0 v40 H0 Z' fill='#5FA9BE'/><rect x='96' y='50' width='60' height='46' rx='6' fill='#191B24'/><path d='M156 58 h14 a12 12 0 0 1 0 24 h-14' fill='none' stroke='#191B24' stroke-width='7'/><path d='M112 42 q6 -12 0 -22 M130 42 q6 -12 0 -22' stroke='#C67C1E' stroke-width='3' fill='none'/></svg>`,
+"양양 서피비치":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#DCEEF0'/><circle cx='240' cy='42' r='22' fill='#E9C33B'/><path d='M0 104 q40 -20 80 0 t80 0 t80 0 t80 0 v40 H0 Z' fill='#2B9BC0'/><g transform='rotate(-28 130 80)'><ellipse cx='130' cy='80' rx='16' ry='58' fill='#FF4B57' stroke='#191B24' stroke-width='3'/><line x1='130' y1='24' x2='130' y2='136' stroke='#191B24' stroke-width='2'/></g></svg>`,
+"제주 애월 카페거리":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#DCEEF0'/><rect y='100' width='300' height='40' fill='#2B9BC0'/><polygon points='200,100 300,72 300,100' fill='#3A3F52'/><polygon points='210,100 260,84 300,92 300,100' fill='#191B24'/><rect x='84' y='60' width='8' height='50' fill='#6B4A2B'/><g fill='#1B8A6B'><path d='M88 60 q-40 -6 -50 8 q34 -4 50 2 Z'/><path d='M88 60 q40 -6 50 8 q-34 -4 -50 2 Z'/><path d='M88 58 q-8 -34 -26 -34 q18 6 26 34 Z'/><path d='M88 58 q8 -34 26 -34 q-18 6 -26 34 Z'/></g></svg>`
+,
+"예산시장":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#F0ECE2'/><rect x='40' y='60' width='220' height='54' fill='#E8E2D4'/><path d='M34 60 h232 l-14 22 h-204 Z' fill='#FF4B57'/><rect x='120' y='38' width='60' height='22' fill='#191B24'/><text x='150' y='54' font-size='14' fill='#E9C33B' font-family='sans-serif' text-anchor='middle'>1913</text><rect x='90' y='84' width='24' height='30' fill='#C67C1E'/><rect x='150' y='84' width='24' height='30' fill='#C67C1E'/><rect x='210' y='84' width='24' height='30' fill='#C67C1E'/></svg>`,
+"북촌 한옥마을":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#EDEFF5'/><path d='M40 86 Q120 50 200 86 L200 92 Q120 60 40 92 Z' fill='#191B24'/><rect x='60' y='88' width='120' height='26' fill='#D9C7A8'/><rect x='104' y='92' width='24' height='22' fill='#191B24'/><g transform='translate(230 58)'><path d='M0 42 L44 8 A46 46 0 0 1 44 42 Z' fill='#FF4B57' stroke='#191B24' stroke-width='2'/><g stroke='#191B24' stroke-width='1.5'><line x1='0' y1='42' x2='40' y2='14'/><line x1='0' y1='42' x2='44' y2='26'/><line x1='0' y1='42' x2='44' y2='38'/></g></g><rect y='114' width='300' height='26' fill='#C9B896'/></svg>`,
+"여수 밤바다·낭만포차":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#DCEEF0'/><rect y='100' width='300' height='40' fill='#2B9BC0'/><polygon points='200,100 300,72 300,100' fill='#3A3F52'/><polygon points='210,100 260,84 300,92 300,100' fill='#191B24'/><rect x='84' y='60' width='8' height='50' fill='#6B4A2B'/><g fill='#1B8A6B'><path d='M88 60 q-40 -6 -50 8 q34 -4 50 2 Z'/><path d='M88 60 q40 -6 50 8 q-34 -4 -50 2 Z'/><path d='M88 58 q-8 -34 -26 -34 q18 6 26 34 Z'/><path d='M88 58 q8 -34 26 -34 q-18 6 -26 34 Z'/></g></svg>`,
+"속초 아바이마을·수산시장":`<svg viewBox='0 0 300 140' preserveAspectRatio='xMidYMid slice'><rect width='300' height='140' fill='#CDE6EC'/><rect y='104' width='300' height='36' fill='#5FA9BE'/><g stroke='#191B24' stroke-width='2'><rect x='40' y='70' width='36' height='34' fill='#F2B5C4'/><rect x='76' y='58' width='36' height='46' fill='#F6D384'/><rect x='112' y='72' width='36' height='32' fill='#A7D3E0'/></g><circle cx='58' cy='84' r='7' fill='#FF4B57'/><path d='M200 104 h60 l-8 14 h-44 Z' fill='#C0392B'/><rect x='226' y='84' width='4' height='20' fill='#191B24'/><polygon points='230,84 250,96 230,100' fill='#F4F2EA'/></svg>`
+};
+const DEEP={
+"성수동":{ask:["성수동이 뜬 뒤 임대료·점포는 어떻게 달라졌고, 초기 상인 이탈과 어떤 관련이 있을까?","붉은벽돌·수제화 자원을 살려 성수동의 정체성을 지키려면 누가 무엇을 해야 할까?"],news:[["성수동 젠트리피케이션 임대료","임대료 상승·상인 이탈 보도"],["성수동 팝업스토어 상권","팝업·대기업 유입과 상권 변화 보도"]],stats:[["tour","성동구 방문자수·관광지출 추이"],["sang","성수동 카페·음식점 점포수·임대료 변화"]]},
+"익선동":{ask:["한옥이 익선동을 뜨게 했지만 그 경관은 잘 지켜지고 있을까?","관광객 증가가 익선동 주민의 삶에 준 영향은?"],news:[["익선동 한옥 젠트리피케이션","임대료·원주민 이탈 보도"],["익선동 관광 상권","한옥 상권화·관광지화 보도"]],stats:[["tour","종로구 방문자수 추이"],["sang","익선동 업종 구성·점포수 변화"]]},
+"을지로":{ask:["을지로의 제조·인쇄 생태계와 새 상권은 공존할 수 있을까?","재개발이 진행되면 무엇이 사라지고 무엇이 남을까?"],news:[["을지로 힙지로 젠트리피케이션","노포·신상권·임대료 보도"],["세운지구 재개발 공구상","재개발·철거·제조업 이주 보도"]],stats:[["sang","을지로 업종(인쇄·공구 vs 카페) 변화"],["tour","중구 방문자수 추이"]]},
+"홍대":{ask:["홍대의 예술·인디문화는 왜 인근으로 옮겨 갔을까?","임대료 상승 속 예술가를 붙잡을 방법은?"],news:[["홍대 젠트리피케이션 인디","임대료 상승·문화 이탈 보도"],["홍대 상권 프랜차이즈","상업화·획일화 보도"]],stats:[["sang","마포구 홍대 상권 업종·임대료"],["tour","마포구 방문자수 추이"]]},
+"연남동":{ask:["경의선숲길은 연남동 상권에 어떤 영향을 주었을까?","주거지 상업화로 주민이 겪는 불편과 해법은?"],news:[["연남동 젠트리피케이션 주거","주거지 상업화·주민 갈등 보도"],["연트럴파크 상권","경의선숲길·상권 변화 보도"]],stats:[["tour","마포구 방문자수 추이"],["sang","연남동 점포수·업종 변화"]]},
+"이태원 경리단길":{ask:["경리단길은 왜 빠르게 뜨고 빠르게 식었을까?","한 번 식은 상권을 되살리려면?"],news:[["경리단길 젠트리피케이션 쇠퇴","임대료 상승·공실 보도"],["경리단길 공실 상권 침체","상권 침체·회복 보도"]],stats:[["sang","용산구 이태원 상권 공실·창폐업"],["tour","용산구 방문자수 추이"]]},
+"삼청동":{ask:["삼청동은 왜 국내에서 가장 먼저 젠트리피케이션을 겪었을까?","문화·예술 정체성을 지키는 임대 안정책은?"],news:[["삼청동 젠트리피케이션","임대료·갤러리 이탈 보도"],["삼청동 상권 공실","관광 변화·공실 보도"]],stats:[["tour","종로구 방문자수 추이"],["sang","삼청동 업종·점포수 변화"]]},
+"신사동 가로수길":{ask:["작은 숍들은 왜 이면도로(세로수길)로 밀려났을까?","대형 브랜드와 작은 가게가 공존할 방법은?"],news:[["가로수길 젠트리피케이션 세로수길","임대료·풍선효과 보도"],["가로수길 대형매장 상권","플래그십·상권 변화 보도"]],stats:[["sang","강남구 신사동 업종·임대료"],["tour","강남구 방문자수 추이"]]},
+"문래동 창작촌":{ask:["철공소와 예술가는 어떻게 공존하게 되었을까?","상업화가 진행되면 먼저 밀려나는 것은 누구일까?"],news:[["문래동 창작촌 젠트리피케이션","예술가·철공소 이탈 우려 보도"],["문래동 예술 상권","산업유산·예술 재생 보도"]],stats:[["sang","영등포구 문래동 업종(제조 vs 카페) 변화"],["tour","영등포구 방문자수 추이"]]},
+"신당동":{ask:["떡볶이 골목이 어떻게 ‘힙당동’으로 바뀌었을까?","신당동의 원래 정체성을 살릴 방법은?"],news:[["신당동 힙당동 상권","청년 창업·힙당동 보도"],["신당동 젠트리피케이션","임대료·노포 상생 보도"]],stats:[["sang","중구 신당동 업종·점포수 변화"],["tour","중구 방문자수 추이"]]},
+"수원 행리단길":{ask:["세계유산 화성 옆에서 행리단길은 어떤 갈등(경관·고도 제한 vs 상업화)을 겪을까?","‘○리단길’ 획일화를 넘어 수원만의 색을 담으려면?"],news:[["수원 행리단길 상권","행리단길 성장·상권 보도"],["수원 화성 행궁동 관광","화성·행궁동 관광·경관 보도"]],stats:[["tour","수원 방문자수·관광지출 추이"],["sang","행궁동 업종·점포수 변화"]]},
+"감천문화마을":{ask:["관광객 수와 주민 수를 비교하면 주민의 삶은 어떤 영향을 받을까?","주민 생활과 관광이 공존하려면?"],news:[["감천문화마을 오버투어리즘","주민 사생활·관광 갈등 보도"],["감천문화마을 주민 관광 갈등","관광지화·주민 불편 보도"]],stats:[["tour","사하구 방문자수 추이"],["sgis","감천동 인구·고령화(관광객 대비 주민)"]]},
+"전포 카페거리":{ask:["공구상가와 카페거리는 어떻게 공존하고 있을까?","‘전리단길’이 획일화되지 않으려면?"],news:[["전포 카페거리 젠트리피케이션","임대료·상권 변화 보도"],["전리단길 상권","전포 카페거리 성장 보도"]],stats:[["tour","부산진구 방문자수 추이"],["sang","전포동 업종(공구 vs 카페) 변화"]]},
+"영도 흰여울문화마을":{ask:["관광객이 몰리며 주민이 겪는 불편은?","감천문화마을과 무엇이 같고 다를까?"],news:[["영도 흰여울문화마을 오버투어리즘","주민 사생활·관광 보도"],["영도 카페 관광","영도 재생·해안 카페 보도"]],stats:[["tour","영도구 방문자수 추이"],["sgis","영선동 인구·주민 현황"]]},
+"F1963":{ask:["F1963은 어떤 산업 자원을 활용해 재생되었을까?","이 재생 모델을 다른 폐공장에 적용하려면?"],news:[["F1963 도시재생 복합문화공간","공장 재생·문화공간 보도"],["부산 산업유산 재생","산업유산 활용 보도"]],stats:[["tour","수영구 방문자수 추이"],["sang","망미동 업종 변화"]]},
+"모모스커피":{ask:["하나의 카페가 부산 관광에 미치는 영향은 얼마나 클까?","브랜드 확장과 로컬 정체성 사이의 선택은?"],news:[["모모스커피 월드 바리스타","세계대회 우승·명성 보도"],["부산 커피도시 관광","부산 커피 관광·상권 보도"]],stats:[["tour","부산 관광지출(신용카드)·방문자 추이"],["sang","부산 카페 점포수 변화"]]},
+"김광석다시그리기길":{ask:["인물 스토리로 골목을 살린 방식의 강점과 한계는?","방천시장 상인과 관광은 어떻게 상생할까?"],news:[["김광석다시그리기길 상권","스토리텔링 골목·관광 보도"],["방천시장 관광 상인","시장 상생·관광 보도"]],stats:[["tour","대구 중구 방문자수 추이"],["sang","대봉동 업종·점포수 변화"]]},
+"성심당":{ask:["‘대전에서만 판다’는 원칙은 정체성에 어떤 역할을 할까?","한 빵집이 대전 관광에 주는 효과는 통계로 얼마나 나타날까?"],news:[["성심당 대전 관광","성심당·대전 관광 효과 보도"],["성심당 대전역 수수료","대전역 입점·임대 갈등 보도"]],stats:[["tour","대전 방문자수·관광지출 추이"],["sang","중구 은행동 제과·상권 현황"]]},
+"소제동":{ask:["철도 관사라는 근대 자원은 재생에 어떻게 쓰였을까?","재개발과 근대건축 보존은 어떻게 조화될까?"],news:[["소제동 카페거리 재개발","근대건축 보존·재개발 갈등 보도"],["소제동 젠트리피케이션","임대료·원주민 보도"]],stats:[["tour","대전 동구 방문자수 추이"],["sang","소제동 업종·점포수 변화"]]},
+"1913송정역시장":{ask:["오래된 시장을 되살린 방법의 효과는?","관광 시장과 생활 시장의 균형은?"],news:[["1913송정역시장 재생","전통시장 재생·관광 보도"],["송정역시장 상권 매출","시장 매출·방문 보도"]],stats:[["tour","광주 광산구 방문자수 추이"],["sang","송정 상권 매출·점포 변화"]]},
+"양림동":{ask:["근대건축 자원은 양림동 관광에 어떻게 활용될까?","근대유산 보존과 상업화의 균형은?"],news:[["양림동 근대문화마을 관광","근대건축·관광 보도"],["광주 양림동 재생","마을 재생·관광 보도"]],stats:[["tour","광주 남구 방문자수 추이"],["sang","양림동 업종·점포수 변화"]]},
+"통영 동피랑마을":{ask:["벽화로 마을을 살린 방식은 지속 가능할까?","통영의 예술·바다 자원을 주민에게 어떻게 환원할까?"],news:[["통영 동피랑 오버투어리즘","주민·관광 갈등 보도"],["동피랑 벽화마을 관광","벽화·마을 재생 보도"]],stats:[["tour","통영 방문자수 추이"],["sgis","동호동 인구·주민 현황"]]},
+"통영 봉숫골":{ask:["전혁림 자원은 봉숫골을 어떻게 바꾸었을까?","예술 정체성과 상업화의 균형은?"],news:[["통영 봉숫골 전혁림","예술 골목·미술관 보도"],["봉숫골 벚꽃 관광","봉숫골 관광·상권 보도"]],stats:[["tour","통영 방문자수 추이"],["sang","봉평동 업종·점포수 변화"]]},
+"김해 봉리단길":{ask:["봉리단길은 다른 ‘리단길’과 어떻게 다를 수 있을까?","가야 유적 자원을 어떻게 엮을까?"],news:[["김해 봉리단길 상권","봉리단길 성장·상권 보도"],["김해 봉황동 관광","가야 유적·원도심 관광 보도"]],stats:[["tour","김해 방문자수 추이"],["sang","봉황동 업종·점포수 변화"]]},
+"경주 황리단길":{ask:["유적 도시에서 황리단길은 어떤 갈등을 낳을까?","문화재 경관과 상권을 조화시키는 기준은?"],news:[["경주 황리단길 젠트리피케이션","임대료·상권 보도"],["경주 황리단길 문화재 경관","문화재 주변 경관·규제 보도"]],stats:[["tour","경주 방문자수·관광지출 추이"],["sang","황남동 업종·임대료 변화"]]},
+"전주 한옥마을":{ask:["한옥마을이 ‘먹거리 위주’로 획일화된 원인은?","전통문화 체험으로 확장하려면?"],news:[["전주 한옥마을 상업화 획일화","먹거리·상업화 보도"],["전주 한옥마을 원주민","실거주 감소·정체성 보도"]],stats:[["tour","전주 방문자수·관광지출 추이"],["sang","교·풍남동 업종 구성 변화"]]},
+"전주 한옥마을·원도심":{ask:["한옥마을·근대역사거리·남부시장은 서로 어떻게 연결되고, 관광은 어디에 쏠려 있을까?","전주 원도심의 전통·근대·시장 자원을 하나의 관광 코스로 잇는 방법은?"],news:[["전주 한옥마을 상업화 획일화","먹거리·상업화·원주민 보도"],["전주 원도심 재생 청년몰","원도심·남부시장 청년몰 재생 보도"]],stats:[["tour","전주 방문자수·관광지출 추이"],["sang","전주 원도심(교·풍남동·남부시장) 업종·점포 변화"]]},
+"전주 근대역사거리":{ask:["전동성당 등 근대 건축은 전주 관광에서 어떤 역할을 할까?","한옥마을에 쏠린 관광을 근대역사거리로 넓히려면?"],news:[["전주 전동성당 근대 관광","근대 건축·관광 보도"],["전주 원도심 재생","원도심 활력·재생 보도"]],stats:[["tour","전주 방문자수·관광지출 추이"],["sang","전주 원도심(태조로 일대) 업종 변화"]]},
+"전주 남부시장 청년몰":{ask:["청년몰은 어떤 자원을 활용해 시장을 살렸을까?","청년 상인이 오래 버티게 하려면?"],news:[["전주 남부시장 청년몰","시장 재생·청년몰 보도"],["청년몰 공실 지속가능","청년몰 지속·공실 보도"]],stats:[["tour","전주 방문자수 추이"],["sang","남부시장 상권 매출·점포 변화"]]},
+"군산 이성당":{ask:["가장 오래된 빵집이라는 스토리는 군산 관광에 어떻게 쓰일까?","이성당의 명성을 군산 근대 관광으로 잇는 방법은?"],news:[["군산 이성당 관광","이성당·군산 관광 보도"],["군산 근대문화 관광","근대역사·시간여행 관광 보도"]],stats:[["tour","군산 방문자수 추이"],["sang","군산 중앙로 상권·제과 현황"]]},
+"목포 근대역사문화거리":{ask:["아픈 역사가 담긴 근대 유산을 관광 자원으로 어떻게 풀어낼까?","원도심 공동화 속 관광이 지역을 살릴 수 있을까?"],news:[["목포 근대역사거리 관광","근대건축·관광 보도"],["목포 원도심 재생","원도심 공동화·재생 보도"]],stats:[["tour","목포 방문자수 추이"],["sang","만호동 업종·점포수 변화"]]},
+"강릉 안목 커피거리":{ask:["‘커피도시’ 브랜드는 강릉 관광에 어떤 효과를 줄까?","해변에 기댄 관광의 계절성을 어떻게 극복할까?"],news:[["강릉 안목 커피거리 관광","커피거리·관광 보도"],["강릉 커피축제 관광","커피도시 브랜드·축제 보도"]],stats:[["tour","강릉 방문자수·관광지출 추이"],["data","해수욕장 이용객·지역 방문 개방데이터"]]},
+"양양 서피비치":{ask:["서핑이라는 자연·놀이 자원은 양양을 어떻게 바꾸었을까?","계절·환경에 민감한 서핑 관광을 지속가능하게 하려면?"],news:[["양양 서피비치 서핑 관광","서핑 성지·관광 보도"],["양양 서핑 지역경제","서핑 관광·지역경제 보도"]],stats:[["tour","양양 방문자수 추이"],["data","해수욕장 이용객·서핑 관련 개방데이터"]]},
+"제주 애월 카페거리":{ask:["해안 절경에 기댄 카페 관광은 경관에 어떤 부담을 줄까?","제주 로컬 자원을 살린 지속가능한 카페 관광은?"],news:[["제주 애월 카페거리 난개발","해안 난개발·경관 보도"],["제주 애월 관광","애월 카페거리·관광 보도"]],stats:[["tour","제주 방문자수·관광지출 추이"],["data","제주 관광객·해안 개방데이터"]]},
+"예산시장":{ask:["쇠퇴하던 예산시장은 어떤 자원과 전략으로 되살아났을까?","기업·인물에 기댄 재생은 지속 가능할까? 다른 지역에 적용하려면?"],news:[["예산시장 백종원 재생","전통시장 재생·방문객 보도"],["예산시장 지방소멸 활성화","지방소멸·활성화 모델 보도"]],stats:[["tour","예산군 방문자수·관광지출 추이"],["sang","예산읍 시장 상권 매출·점포 변화"]]},
+"북촌 한옥마을":{ask:["북촌은 왜 관광객 통제까지 하게 되었을까? (오버투어리즘)","한옥 경관·주민 생활·관광을 함께 지키려면?"],news:[["북촌 한옥마을 오버투어리즘","관광객 통제·주민 갈등 보도"],["북촌 한옥마을 상업화","상업화·실거주 감소 보도"]],stats:[["tour","종로구 방문자수·관광지출 추이"],["sgis","가회동 인구·주민 현황"]]},
+"여수 밤바다·낭만포차":{ask:["‘여수 밤바다’ 이미지·노래는 관광에 어떤 영향을 주었을까?","성수기 혼잡·바가지 문제를 어떻게 풀 수 있을까?"],news:[["여수 밤바다 관광 혼잡","성수기 혼잡·교통 보도"],["여수 바가지 상생","바가지 논란·상생 보도"]],stats:[["tour","여수 방문자수·관광지출 추이"],["data","여수 관광객·해수욕장 개방데이터"]]},
+"속초 아바이마을·수산시장":{ask:["실향민이 세운 아바이마을은 어떻게 관광지가 되었을까?","관광지화 속에서 실향민 마을의 정체성을 지키려면?"],news:[["속초 아바이마을 관광","아바이마을·갯배 관광 보도"],["속초 관광수산시장 혼잡","성수기 혼잡·상권 보도"]],stats:[["tour","속초 방문자수·관광지출 추이"],["data","속초 해수욕장 이용객·관광 개방데이터"]]}
+};
+const $=s=>document.querySelector(s);
+const MEM={};
+function loadNote(k){try{return localStorage.getItem(k)||"";}catch(e){return MEM[k]||"";}}
+function saveNote(k,v){try{localStorage.setItem(k,v);}catch(e){MEM[k]=v;}}
+function bindNotes(root){root.querySelectorAll('textarea[data-key]').forEach(t=>{t.value=loadNote(t.dataset.key);t.addEventListener('input',()=>saveNote(t.dataset.key,t.value));});}
+const TYPE_CLASS={"브랜드·노포형":"brand","재생 공간형":"renew","자연·관광형":"nature"};
+function badge(p){return `<span class="type-badge ${TYPE_CLASS[p.type]||'area'}">${p.type}</span>`;}
+function kakaoRoad(p){return "https://map.kakao.com/link/roadview/"+p.coords;}
+function naverMap(p){const a=p.loc.split('·')[0].trim();return "https://map.naver.com/p/search/"+encodeURIComponent(p.name+" "+a);}
+function ytWalk(p){return "https://www.youtube.com/results?search_query="+encodeURIComponent(p.name+" 거리 걷기 walk");}
+function newsUrl(q){return "https://search.naver.com/search.naver?where=news&query="+encodeURIComponent(q);}
+function admin(p){var seg=p.loc.split("·")[0].trim().split(/\s+/);for(var i=0;i<seg.length;i++){if(/(구|군|시)$/.test(seg[i]))return seg[i];}return p.region;}
+const STATTOOLS={tour:{label:"한국관광 데이터랩",url:"https://datalab.visitkorea.or.kr/"},sang:{label:"소상공인 상권정보시스템",url:"https://sg.sbiz.or.kr/"},kosis:{label:"국가통계포털 KOSIS",url:"https://kosis.kr/"},sgis:{label:"통계지리정보 SGIS",url:"https://sgis.kostat.go.kr/"},data:{label:"공공데이터포털",url:"https://www.data.go.kr/"}};
+const SLUG={"성수동":"seongsu","익선동":"ikseon","을지로":"euljiro","홍대":"hongdae","연남동":"yeonnam","이태원 경리단길":"gyeongnidan","삼청동":"samcheong","신사동 가로수길":"garosu","문래동 창작촌":"mullae","신당동":"sindang","수원 행리단길":"hangnidan","감천문화마을":"gamcheon","전포 카페거리":"jeonpo","영도 흰여울문화마을":"huinnyeoul","F1963":"f1963","모모스커피":"momos","김광석다시그리기길":"kimgwangseok","성심당":"sungsimdang","소제동":"soje","1913송정역시장":"songjeong","양림동":"yangnim","통영 동피랑마을":"dongpirang","통영 봉숫골":"bongsutgol","김해 봉리단길":"bongnidan","경주 황리단길":"hwangnidan","전주 한옥마을":"jeonju-hanok","전주 근대역사거리":"jeonju-modern","전주 남부시장 청년몰":"nambu-market","군산 이성당":"leesungdang","목포 근대역사문화거리":"mokpo-modern","강릉 안목 커피거리":"anmok","양양 서피비치":"surfyy","제주 애월 카페거리":"aewol","전주 한옥마을·원도심":"jeonju","예산시장":"yesan","북촌 한옥마을":"bukchon","여수 밤바다·낭만포차":"yeosu","속초 아바이마을·수산시장":"sokcho"};
+// 자유 이용(위키미디어 커먼즈, CC BY-SA) 사진 — 확인된 명소만 우선 표시. 나머지는 photos/<slug>.jpg 로 대체.
+const PHOTO={
+"감천문화마을":"https://commons.wikimedia.org/wiki/Special:FilePath/Gamcheon_Colored_Houses,_Busan,_Korea.jpg?width=700",
+"전주 한옥마을":"https://commons.wikimedia.org/wiki/Special:FilePath/Street_of_Jeonju_Hanok_maeul.jpg?width=700",
+"영도 흰여울문화마을":"https://commons.wikimedia.org/wiki/Special:FilePath/Huinnyeoul_Culture_Village.jpg?width=700",
+"경주 황리단길":"https://commons.wikimedia.org/wiki/Special:FilePath/Sunset_over_the_Tumuli_Park_in_Gyeongju_Historic_Site_Wolseong_District_South_Korea.jpg?width=700",
+"수원 행리단길":"https://commons.wikimedia.org/wiki/Special:FilePath/Changnyongmun_-_Suwon_Hwaseong_Fortress_(2016)_-_img_02.jpg?width=700",
+"전주 한옥마을·원도심":"https://commons.wikimedia.org/wiki/Special:FilePath/Street_of_Jeonju_Hanok_maeul.jpg?width=700",
+"성수동":"https://commons.wikimedia.org/wiki/Special:FilePath/Brick_storefront_in_Seongsu-dong.jpg?width=700",
+"익선동":"https://commons.wikimedia.org/wiki/Special:FilePath/Ikseon-dong_%EC%9D%B5%EC%84%A0%EB%8F%99_October_1_2020_3.jpg?width=700"
+};
+window.__art=function(n){return ART[n]||ART_DEFAULT;};
+function thumbHTML(p){return `<div class="phwrap" data-name="${p.name}">${window.__art(p.name)}</div>`;}
+function commonsPhoto(query){var u="https://commons.wikimedia.org/w/api.php?action=query&format=json&origin=*&generator=search&gsrsearch="+encodeURIComponent("filetype:bitmap "+query)+"&gsrnamespace=6&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=700";return fetch(u).then(function(r){return r.json();}).then(function(j){try{var pg=j.query.pages;var k=Object.keys(pg)[0];var ii=pg[k].imageinfo[0];return ii.thumburl||ii.url;}catch(e){return null;}}).catch(function(){return null;});}
+function showImg(wrap,name,src,onerr){var im=new Image();im.className="ph";im.alt=name;im.loading="lazy";im.onload=function(){wrap.innerHTML="";wrap.appendChild(im);};im.onerror=onerr;im.src=src;}
+function resolvePhoto(wrap){var name=wrap.dataset.name;var p=PLACES.find(function(x){return x.name===name;});if(!p)return;var ill=function(){wrap.innerHTML=window.__art(name);};if(PHOTO[name]){showImg(wrap,name,PHOTO[name],ill);return;}showImg(wrap,name,"photos/"+(SLUG[name]||"x")+".jpg",function(){commonsPhoto(p.name+" "+p.region).then(function(url){if(url)showImg(wrap,name,url,ill);else ill();});});}
+
+const grid=$('#grid'),countEl=$('#count'),ws=$('#ws');
+let currentRegion="all";
+function getDone(){try{return JSON.parse(localStorage.getItem("hp_done")||"[]");}catch(e){return [];}}
+function updProgress(){var el=document.getElementById("progress");if(el)el.textContent="탐구 완료 "+getDone().length+" / "+PLACES.length+"곳";}
+function setDone(name,on){var dn=getDone();var i=dn.indexOf(name);if(on&&i<0)dn.push(name);if(!on&&i>=0)dn.splice(i,1);try{localStorage.setItem("hp_done",JSON.stringify(dn));}catch(e){}updProgress();var c=grid.querySelector('[data-name="'+(window.CSS&&CSS.escape?CSS.escape(name):name)+'"]');if(c){c.classList.toggle("done",on);var sp=c.querySelector(".code span:last-child");if(sp){var ix=PLACES.findIndex(function(x){return x.name===name;});sp.textContent=on?"✓ 완료":String(ix+1).padStart(2,"0");}}}
+function exportText(name){var p=PLACES.find(function(x){return x.name===name;});return "["+name+"]"+(p?" "+p.loc:"")+"\n\n■ 거리 관찰\n"+loadNote("hp1_"+name)+"\n\n■ 찾은 기사(제목·날짜·출처·핵심)\n"+loadNote("hp3_"+name+"_article")+"\n\n■ 찾은 통계(지표·수치·출처)\n"+loadNote("hp3_"+name+"_stat")+"\n\n■ 나의 생각·정리\n"+loadNote("hp3_"+name+"_idea")+"\n";}
+function downloadNotes(name){var b=new Blob([exportText(name)],{type:"text/plain;charset=utf-8"});var a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name+"_탐구기록.txt";document.body.appendChild(a);a.click();a.remove();}
+function copyNotes(name,btn){var t=exportText(name);function ok(){if(btn){var o=btn.textContent;btn.textContent="복사됨!";setTimeout(function(){btn.textContent=o;},1200);}}if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(t).then(ok,function(){});}else{var ta=document.createElement("textarea");ta.value=t;document.body.appendChild(ta);ta.select();try{document.execCommand("copy");ok();}catch(e){}ta.remove();}}
+function render(region){grid.innerHTML="";var done=getDone();var list=PLACES.filter(function(p){return region==="all"||p.region===region;});list.forEach(function(p){var idx=PLACES.indexOf(p);var dn=done.indexOf(p.name)>=0;var b=document.createElement("button");b.className="card"+(dn?" done":"");b.dataset.name=p.name;b.innerHTML=`<div class="thumb">${thumbHTML(p)}</div><div class="top"><div class="code"><span>${p.code} · ${p.region}</span><span>${dn?"✓ 완료":String(idx+1).padStart(2,"0")}</span></div><h3>${p.name}</h3><div class="loc">${p.loc}</div>${badge(p)}</div><div class="body"><div class="feat">${p.feat}</div><span class="more mono">선택 · 탐구 시작</span></div>`;b.addEventListener("click",function(){selectPlace(p.name);});grid.appendChild(b);});grid.querySelectorAll(".phwrap").forEach(resolvePhoto);countEl.textContent=`${list.length} / ${PLACES.length} SITES`;updProgress();}
+$('#filters').addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;currentRegion=btn.dataset.region;[...document.querySelectorAll('#filters button')].forEach(b=>b.setAttribute('aria-pressed',b===btn));render(currentRegion);});
+
+const RUBRIC_HTML=`<table class="rubric"><tr><th>채점요소</th><th>수행 수준 요약 (A → E)</th><th>배점</th></tr>
+<tr><td>① 특징과 생성 과정 조사</td><td>출처 확인 자료 2개 이상으로 특징·생성 과정을 체계적으로 정리(A) → 조사 내용이 매우 미흡(E)</td><td>20<br><span class="mono" style="font-size:.72rem">A20·B17·C14·D11·E8</span></td></tr>
+<tr><td>② 지역 자원과 성공 요인 분석</td><td>지역 자원을 구체적으로 찾고 성공 요인을 근거·인과관계로 분석(A) → 파악 매우 미흡(E)</td><td>20<br><span class="mono" style="font-size:.72rem">A20·B17·C14·D11·E8</span></td></tr>
+<tr><td>③ 지역 정체성 변화와 문제점</td><td>자료 근거로 정체성 변화를 파악하고 문제점을 논리적으로 분석(A) → 파악 매우 미흡(E)</td><td>30<br><span class="mono" style="font-size:.72rem">A30·B26·C22·D18·E14</span></td></tr>
+<tr><td>④ 지역 자원 활용 활성화 방안 제안</td><td>대상·방법·기대효과·예상문제·해결방안이 구체적·실현 가능(A) → 거의 제안 못함(E)</td><td>30<br><span class="mono" style="font-size:.72rem">A30·B26·C22·D18·E14</span></td></tr>
+<tr><td>총점</td><td>기본점수 30점(참여했으나 산출물 없음) · 결과물은 <b>수업 중</b> 제출</td><td>100</td></tr></table>`;
+
+function obsCue(){return `<ul class="obscue"><li>건물은 새것인가, 오래돼 보이는가? (벽 재질·높이)</li><li>어떤 가게 간판이 많이 보이나? (카페·음식점·옷가게·오래된 가게 등)</li><li>길은 좁은 골목인가 큰길인가? 걷는 사람이 많은가?</li><li>이곳에서만 눈에 띄는 것은? (벽화·한옥·바다·공장·빈 가게 등)</li></ul>`;}
+function field(p,k,label,pts,hint){return `<div class="ws-field"><div class="fl">${label}${pts?` <span style="color:#8a8a8a;font-weight:400">(${pts})</span>`:""}</div><div class="fh">${hint}</div><textarea class="note" data-key="hp2_${p.name}_${k}" placeholder="직접 조사·분석한 내용을 자료 근거(출처)와 함께 적으세요."></textarea></div>`;}
+
+function selectPlace(name,noScroll){var p=PLACES.find(function(x){return x.name===name;});if(!p)return;try{localStorage.setItem("hp_last",name);}catch(e){}var d=DEEP[p.name]||{ask:[],news:[],stats:[]};
+ var _n=p.name,gen;
+ if(p.type==="자연·관광형"){gen=[_n+" 뜬 이유",_n+" 관광객",_n+" 오버투어리즘",_n+" 환경 문제",_n+" 관광 활성화"];}
+ else if(p.type==="재생 공간형"){gen=[_n+" 도시재생",_n+" 형성 배경",_n+" 방문객 매출",_n+" 지속가능",_n+" 관광 활성화"];}
+ else if(p.type==="브랜드·노포형"){gen=[_n+" 인기 비결",_n+" 지역 경제",_n+" 오픈런 혼잡",_n+" 상권 변화",_n+" 관광 효과"];}
+ else if(/마을/.test(_n)){gen=[_n+" 형성 역사",_n+" 오버투어리즘",_n+" 주민 갈등",_n+" 상업화",_n+" 관광 활성화"];}
+ else {gen=[_n+" 뜬 이유",_n+" 젠트리피케이션",_n+" 임대료 상승",_n+" 상권 변화",_n+" 관광 활성화"];}
+ var kw=gen.map(function(k){return `<a class="rlink" href="${newsUrl(k)}" target="_blank" rel="noopener"><span class="rl-t">${k}</span></a>`;}).join("");
+ var q=d.ask.map(function(x){return `<li>${x}</li>`;}).join("");
+ var ad=admin(p);
+ var dmap={};d.stats.forEach(function(a){dmap[a[0]]=a[1];});
+ var sdef={tour:"지역별 방문자수·관광지출 추이",sang:"업종·점포수·임대료·창폐업 변화",kosis:"인구·사업체 수 등 국가통계",sgis:"지도로 보는 인구·사업체 통계",data:"지역 방문자·개방데이터 파일"};
+ var sroad={tour:"관광통계 ▸ 지역별 방문자수·관광지출 ▸ 시군구 '"+ad+"' 선택 ▸ 기간 설정 후 조회",sang:"상권분석 ▸ 지도에서 '"+p.name+"' 일대 지정 ▸ 업종 선택 ▸ 매출·점포수·임대료·창폐업률",kosis:"검색결과에서 '사업체 수'·'인구' 통계표 선택 ▸ 시점·지역('"+ad+"') 설정 ▸ 조회",sgis:"대화형 통계지도 ▸ 인구/사업체 ▸ '"+ad+"' 검색 ▸ 항목·연도 선택",data:"검색결과에서 파일데이터(CSV·엑셀) 선택 ▸ 미리보기·다운로드"};
+ var shref={tour:"https://datalab.visitkorea.or.kr/",sang:"https://sg.sbiz.or.kr/",kosis:"https://kosis.kr/search/search.do?query="+encodeURIComponent(ad+" 사업체"),sgis:"https://sgis.kostat.go.kr/",data:"https://www.data.go.kr/tcs/dss/selectDataSetList.do?keyword="+encodeURIComponent(p.type==="자연·관광형"?"해수욕장 이용객":"지역별 방문자")};
+ function statLink(k,easy){var s=STATTOOLS[k];return `<a class="rlink" href="${shref[k]}" target="_blank" rel="noopener"><span class="rl-t">${s.label}${easy?'<span class="stag">쉬움</span>':''}</span><span class="rl-n">${dmap[k]||sdef[k]}</span><span class="rl-road">경로 ▸ ${sroad[k]}</span></a>`;}
+ var statsEasy=["tour","sang"].map(function(k){return statLink(k,true);}).join("");
+ var statsAdv=["kosis","sgis","data"].map(function(k){return statLink(k,false);}).join("");
+ var isdone=getDone().indexOf(name)>=0;
+ ws.innerHTML=`
+  <div class="wstop"><button class="backbtn" id="backBtn">← 목록으로</button><button class="donebtn${isdone?' on':''}" id="doneBtn">${isdone?'✓ 탐구 완료됨':'탐구 완료 체크'}</button></div>
+  <div class="wscard"><div class="wsthumb">${thumbHTML(p)}</div><div class="wshead"><div class="code">${p.code} · ${p.region}</div><h3>${p.name}</h3><div class="loc">${p.loc} · ${p.type}</div><div class="rvrow"><a class="rvbtn" href="${kakaoRoad(p)}" target="_blank" rel="noopener">카카오맵 로드뷰 ↗</a><a class="rvbtn alt" href="${naverMap(p)}" target="_blank" rel="noopener">네이버 지도 ↗</a><a class="rvbtn yt" href="${ytWalk(p)}" target="_blank" rel="noopener">거리 둘러보기(유튜브) ↗</a></div></div></div>
+  <details class="refbox"><summary>참고 · 답사 노트 열기 (특징 · 생성 과정 · 정체성 이슈 · 지역 자원)</summary><div class="block"><span class="lab c-feat">특징</span><p>${p.feat}</p></div><div class="block"><span class="lab c-cycle">생성 과정</span><ol class="steps">${p.cycle.map(function(s){return `<li>${s}</li>`;}).join("")}</ol></div><div class="block"><span class="lab c-issue">정체성 이슈</span><ul class="bul">${p.issue.map(function(s){return `<li>${s}</li>`;}).join("")}</ul></div><div class="block"><span class="lab c-res">활용 가능한 지역 자원</span><p>${p.res}</p></div><div class="hint"><b>탐구 힌트</b>${p.hint}</div></details>
+  <div class="block"><span class="lab c-obs">1 · 거리에서 무엇이 보이나요? (경관 관찰)</span><div class="obsbox"><p style="margin:0 0 8px;font-size:1rem;color:var(--ink-soft)">위 로드뷰를 열고 마우스로 드래그해 앞뒤로 이동하며 아래를 확인하고 적어 보세요.</p>${obsCue()}<textarea class="note" data-key="hp1_${p.name}" placeholder="로드뷰로 관찰한 이 거리의 경관적 특징을 적어 보세요."></textarea></div></div>
+  <div class="refcard"><div class="lab" style="margin-bottom:8px;color:var(--cobalt);border-bottom:2px solid var(--cobalt);display:inline-block">2 · 근거 찾기</div>
+    <p style="margin:6px 0 12px;font-size:.92rem;color:var(--ink-soft)">AI에 물어보기 전에, 아래 <b>키워드</b>를 눌러 직접 검색해 보세요.</p>
+    <div class="refgrid"><div><div class="lab">언론 보도 · 키워드로 검색</div><div class="rlinks">${kw}</div><div class="searchtip">좋은 자료 고르기 ▸ 결과에서 ① 최근 날짜, ② 언론사(신문·방송) 이름이 분명한 것, ③ 구체적 수치·인용이 있는 기사를 고르세요. 블로그·광고는 참고만.</div></div>
+      <div><div class="lab">통계 · 이것부터</div><div class="rlinks">${statsEasy}</div><details class="advstats"><summary>심화 통계 더 보기 (KOSIS·SGIS·공공데이터)</summary><div class="rlinks">${statsAdv}</div></details></div></div>
+    <div style="margin-top:14px"><div class="lab">탐구 질문(예시)</div><ul class="qlist">${q}</ul></div></div>
+  <div class="rectbox"><div class="lab" style="margin:0 0 4px;color:var(--teal);border-bottom:2px solid var(--teal);display:inline-block">3 · 탐구 기록 (찾은 자료 정리)</div>
+    <p style="margin:6px 0 12px;font-size:.9rem;color:var(--ink-soft)">찾은 기사·통계를 여기에 정리하세요. 입력은 이 컴퓨터에 자동 저장되고, 다시 접속하면 그대로 다시 보입니다.</p>
+    <div class="ws-field"><div class="fl">찾은 기사</div><div class="fh">제목 · 날짜 · 언론사(출처)와 핵심 내용을 적으세요.</div><textarea class="note" data-key="hp3_${p.name}_article" placeholder="예) ○○일보(2024.5.1) — 성수동 임대료 3년 새 2배, 초기 카페 이탈…"></textarea></div>
+    <div class="ws-field"><div class="fl">찾은 통계</div><div class="fh">지표 · 수치 · 변화와 출처(포털)를 적으세요.</div><textarea class="note" data-key="hp3_${p.name}_stat" placeholder="예) 한국관광 데이터랩 — 성동구 방문자 2021→2023 ○○% 증가…"></textarea></div>
+    <div class="ws-field"><div class="fl">나의 생각·정리</div><div class="fh">자료로 알게 된 형성·성장·문제·활성화 아이디어를 한두 줄로.</div><textarea class="note" data-key="hp3_${p.name}_idea" placeholder="자료를 종합해 내 생각을 적어 보세요."></textarea></div>
+    <div class="exprow"><button class="expbtn" id="dlBtn">내 기록 파일로 저장(.txt)</button><button class="expbtn alt" id="cpBtn">복사</button><span class="savenote">입력은 자동 저장됩니다.</span></div></div>`;
+ bindNotes(ws);ws.querySelectorAll(".phwrap").forEach(resolvePhoto);
+ document.getElementById("backBtn").addEventListener("click",function(){document.getElementById("explore").scrollIntoView({behavior:"smooth",block:"start"});});
+ document.getElementById("doneBtn").addEventListener("click",function(){var nowon=getDone().indexOf(name)<0;setDone(name,nowon);var db=document.getElementById("doneBtn");db.className="donebtn"+(nowon?" on":"");db.textContent=nowon?"✓ 탐구 완료됨":"탐구 완료 체크";});
+ document.getElementById("dlBtn").addEventListener("click",function(){downloadNotes(name);});
+ document.getElementById("cpBtn").addEventListener("click",function(){copyNotes(name,this);});
+ if(!noScroll)document.getElementById("wsSection").scrollIntoView({behavior:"smooth",block:"start"});}
+render("all");
+try{var _last=localStorage.getItem("hp_last");if(_last&&PLACES.find(function(x){return x.name===_last;}))selectPlace(_last,true);}catch(e){}
+
+</script></body></html>
